@@ -259,14 +259,14 @@ function M:closeAllMenus()
     local menus = {
         self.mentions_menu, self.char_menu, self.loc_menu,
         self.timeline_menu, self.hf_menu, self.xray_menu,
-        self.active_details_dialog, self.return_banner
+        self.terms_menu, self.active_details_dialog, self.return_banner
     }
-    for i = 1, 8 do
+    for i = 1, 9 do
         if menus[i] then pcall(function() UIManager:close(menus[i]) end) end
     end
     self.mentions_menu = nil; self.char_menu = nil; self.loc_menu = nil
     self.timeline_menu = nil; self.hf_menu = nil; self.xray_menu = nil
-    self.active_details_dialog = nil; self.return_banner = nil
+    self.terms_menu = nil; self.active_details_dialog = nil; self.return_banner = nil
     
     local function executeClear()
         -- 2. Dismiss native KOReader top menu stack
@@ -307,16 +307,13 @@ function M:closeAllMenus()
 end
 
 function M:showCharacters()
-    if not self.characters or #self.characters == 0 then
-        UIManager:show(InfoMessage:new{ text = self.loc:t("no_character_data"), timeout = 3 })
-        return
+    self.characters = self.characters or {}
+    local items = {}
+    if #self.characters > 0 then
+        table.insert(items, { text = "⌕ " .. self.loc:t("search_character"), callback = function() self:showCharacterSearch() end })
+        table.insert(items, { text = "⋈ " .. (self.loc:t("merge_duplicates") or "Merge Duplicates..."), callback = function() self:showMergeFlow(self.characters, "characters") end })
     end
-
-    local items = {
-        { text = "⌕ " .. self.loc:t("search_character"), callback = function() self:showCharacterSearch() end },
-        { text = "⋈ " .. (self.loc:t("merge_duplicates") or "Merge Duplicates..."), callback = function() self:showMergeFlow(self.characters, "characters") end },
-        { text = "✚ " .. (self.loc:t("menu_fetch_more_chars") or "Fetch More Characters"), keep_menu_open = true, callback = function() self:fetchMoreCharacters() end, separator = true },
-    }
+    table.insert(items, { text = "✚ " .. (self.loc:t("menu_fetch_more_chars") or "Fetch More Characters"), keep_menu_open = true, callback = function() self:fetchMoreCharacters() end, separator = #self.characters > 0 })
     for _, char in ipairs(self.characters) do
         local name = char.name or "Unknown"
         local text = "• " .. name
@@ -441,6 +438,7 @@ function M:findRelatedEntities(text, exclude_name)
     scanList(self.characters, "character")
     scanList(self.locations, "location")
     scanList(self.historical_figures, "historical")
+    scanList(self.terms, "term")
 
     return related
 end
@@ -475,6 +473,8 @@ function M:showRelatedEntities(related)
                     self:showLocationDetails(item)
                 elseif item_type == "historical" then
                     self:showHistoricalFigureDetails(item)
+                elseif item_type == "term" then
+                    self:showTermDetails(item)
                 end
             end
         })
@@ -539,6 +539,7 @@ function M:showCharacterDetails(character)
                 {
                     text = self.loc:t("find_mentions") or "Find Mentions",
                     callback = function()
+                        if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                         self:showMentionsForEntity(character)
                     end,
                 },
@@ -568,6 +569,7 @@ function M:showCharacterDetails(character)
                 ok_text = self.loc:t("find_mentions") or "Find Mentions",
                 cancel_text = self.loc:t("close") or "Close",
                 ok_callback = function()
+                    if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                     self:showMentionsForEntity(character)
                 end,
                 cancel_callback = function()
@@ -609,6 +611,7 @@ function M:showLocationDetails(loc_item)
                 {
                     text = self.loc:t("find_mentions") or "Find Mentions",
                     callback = function()
+                        if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                         self:showMentionsForEntity(loc_item)
                     end,
                 },
@@ -638,6 +641,7 @@ function M:showLocationDetails(loc_item)
                 ok_text = self.loc:t("find_mentions") or "Find Mentions",
                 cancel_text = self.loc:t("close") or "Close",
                 ok_callback = function()
+                    if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                     self:showMentionsForEntity(loc_item)
                 end,
                 cancel_callback = function()
@@ -655,6 +659,212 @@ function M:showLocationDetails(loc_item)
         end
     end
     UIManager:show(self.active_details_dialog)
+end
+
+function M:showTermDetails(term)
+    local name = term.name or "???"
+    local lines = { (self.loc:t("label_name") or "NAME") .. ": " .. name }
+    if term.expanded and term.expanded ~= "" and term.expanded ~= term.name then
+        table.insert(lines, (self.loc:t("label_expanded") or "STANDS FOR") .. ": " .. term.expanded)
+    end
+    if term.category and term.category ~= "" then
+        table.insert(lines, (self.loc:t("label_category") or "CATEGORY") .. ": " .. term.category)
+    end
+    table.insert(lines, "")
+    table.insert(lines, (self.loc:t("label_definition") or "DEFINITION") .. ":")
+    table.insert(lines, term.definition or "---")
+    
+    local body_text = table.concat(lines, "\n")
+    local linked_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.linked_entries_enabled ~= false
+    local related = linked_enabled and self:findRelatedEntities(term.definition or "", name) or {}
+    local mentions_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.mentions_enabled ~= false
+
+    if #related > 0 then
+        local buttons = {
+            {
+                {
+                    text = self.loc:t("linked_entries") or "Linked Entries",
+                    callback = function()
+                        self:showRelatedEntities(related)
+                    end,
+                }
+            },
+            {
+                {
+                    text = self.loc:t("find_mentions") or "Find Mentions",
+                    callback = function()
+                        if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
+                        self:showMentionsForEntity(term)
+                    end,
+                },
+                {
+                    text = self.loc:t("close") or "Close",
+                    callback = function()
+                        if self.active_details_dialog then UIManager:close(self.active_details_dialog) end
+                        self.active_details_dialog = nil
+                    end,
+                }
+            }
+        }
+        if not mentions_enabled then table.remove(buttons[2], 1) end
+        self.active_details_dialog = ButtonDialog:new{ title = body_text, buttons = buttons }
+    else
+        if mentions_enabled then
+            self.active_details_dialog = ConfirmBox:new{
+                text = body_text, icon = "info",
+                ok_text = self.loc:t("find_mentions") or "Find Mentions",
+                cancel_text = self.loc:t("close") or "Close",
+                ok_callback = function()
+                    if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
+                    self:showMentionsForEntity(term)
+                end,
+                cancel_callback = function() self.active_details_dialog = nil end,
+            }
+        else
+            self.active_details_dialog = ConfirmBox:new{
+                text = body_text, icon = "info",
+                ok_text = self.loc:t("close") or "Close",
+                ok_callback = function() self.active_details_dialog = nil end,
+                cancel_callback = function() self.active_details_dialog = nil end,
+            }
+        end
+    end
+    UIManager:show(self.active_details_dialog)
+end
+
+function M:showTerms()
+    self.terms = self.terms or {}
+    local items = {}
+    if #self.terms > 0 then
+        table.insert(items, { text = "⌕ " .. (self.loc:t("search_term") or "Search Terms"), callback = function() self:showTermSearch() end })
+    end
+    table.insert(items, { text = "✚ " .. (self.loc:t("menu_fetch_more_terms") or "Fetch More Terms"), callback = function() self:fetchMoreTerms() end, separator = #self.terms > 0 })
+    for _, term in ipairs(self.terms) do 
+        if type(term) == "table" then
+            local captured_term = term
+            table.insert(items, {
+                text = "• " .. (term.name or "???"),
+                subtext = term.definition and term.definition:sub(1, 80) .. "...",
+                keep_menu_open = true,
+                callback = function()
+                    self:showTermDetails(captured_term)
+                end
+            })
+        end
+    end
+    
+    self.terms_menu = Menu:new{
+        title = (self.loc:t("menu_terms") or "Glossary") .. " (" .. #self.terms .. ")",
+        item_table = items,
+        is_borderless = true,
+        width = Screen:getWidth(),
+        height = Screen:getHeight(),
+        on_close_callback = function() 
+            if self.is_cancelled then return end
+            self:showFullXRayMenu() 
+        end,
+    }
+    UIManager:show(self.terms_menu)
+end
+
+function M:findTermByName(word)
+    if not word or not self.terms then return nil end
+    local query = word:lower()
+    for _, term in ipairs(self.terms) do
+        if (term.name or ""):lower() == query then
+            return term
+        end
+    end
+    return nil
+end
+
+function M:showTermSearch()
+    if not self.terms or #self.terms == 0 then UIManager:show(InfoMessage:new{ text = self.loc:t("no_terms_data"), timeout = 3 }); return end
+    local InputDialog = require("ui/widget/inputdialog")
+    local input_dialog
+    input_dialog = InputDialog:new{ 
+        title = self.loc:t("search_term") or "Search Terms", 
+        input = "", input_hint = self.loc:t("search_hint"), 
+        buttons = {
+            {{ text = self.loc:t("cancel"), callback = function() UIManager:close(input_dialog) end }, 
+             { text = self.loc:t("search_button") or "Search", is_enter_default = true, 
+               callback = function() 
+                   local search_text = input_dialog:getInputText()
+                   UIManager:close(input_dialog)
+                   if search_text and #search_text > 0 then 
+                       local found = self:findTermByName(search_text)
+                       if found then self:showTermDetails(found) 
+                       else UIManager:show(InfoMessage:new{ text = self.loc:t("term_not_found", search_text) or "Term not found.", timeout = 3 }) end 
+                   end 
+               end 
+             }}
+        } 
+    }
+    UIManager:show(input_dialog); input_dialog:onShowKeyboard()
+end
+
+function M:showBookTypeSettings()
+    local ButtonDialog = require("ui/widget/buttondialog")
+    local info_dialog
+    
+    local function showSettings()
+        if info_dialog then UIManager:close(info_dialog) end
+        
+        local current = "auto"
+        if not self.cache_manager then self.cache_manager = require(plugin_path .. "xray_cachemanager"):new() end
+        local cache = self.cache_manager:loadCache(self.ui.document.file)
+        if cache and cache.book_mode_override then
+            current = cache.book_mode_override
+        else
+            current = self.ai_helper.settings.default_book_mode or "auto"
+        end
+
+        local function setType(mode)
+            local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+            cache.book_mode_override = mode
+            self.cache_manager:saveCache(self.ui.document.file, cache)
+            self.book_type = (mode == "auto") and nil or mode
+            UIManager:show(InfoMessage:new{ text = self.loc:t("book_type_saved") or "Book Type saved!", timeout = 3 })
+            UIManager:setDirty(nil, "ui")
+            UIManager:nextTick(function() showSettings() end)
+        end
+
+        info_dialog = ButtonDialog:new{
+            title = self.loc:t("menu_book_mode") or "Book Type",
+            text = self.loc:t("book_mode_desc") or "Select the type for this book:",
+            buttons = {
+                {
+                    { 
+                        text = (current == "auto" and "[✓] " or "[  ] ") .. (self.loc:t("book_type_auto") or "Auto-Detect"), 
+                        callback = function() setType("auto") end 
+                    },
+                    { 
+                        text = (current == "fiction" and "[✓] " or "[  ] ") .. (self.loc:t("book_type_fiction") or "Fiction"), 
+                        callback = function() setType("fiction") end 
+                    },
+                    { 
+                        text = (current == "non_fiction" and "[✓] " or "[  ] ") .. (self.loc:t("book_type_nonfiction") or "Non-Fiction"), 
+                        callback = function() setType("non_fiction") end 
+                    },
+                },
+                {
+                    { 
+                        text = self.loc:t("menu_about") or "About", 
+                        callback = function()
+                            UIManager:show(InfoMessage:new{
+                                text = self.loc:t("book_type_about") or "The Book Type determines which AI extraction strategy is used.\n\n- Fiction: Focuses on characters, timeline, and world-building terms (factions, spells, lore, etc.).\n- Non-Fiction: Focuses on technical terms, concepts, and historical figures.\n\n'Auto-Detect' will let the AI decide after the first fetch.",
+                                timeout = 30
+                            })
+                        end
+                    },
+                    { text = self.loc:t("close") or "Close", callback = function() UIManager:close(info_dialog) end }
+                }
+            }
+        }
+        UIManager:show(info_dialog)
+    end
+    
+    showSettings()
 end
 
 function M:showMentionsSettings()
@@ -1112,6 +1322,10 @@ function M:showDescriptionLengthSettings()
             text = self.loc:t("menu_historical_figures"),
             callback = function() self:showEntityLengthPresets("hist_fig_bio_len", self.loc:t("menu_historical_figures")) end,
         },
+        {
+            text = self.loc:t("menu_terms") or "Glossary",
+            callback = function() self:showEntityLengthPresets("term_def_len", self.loc:t("menu_terms") or "Glossary") end,
+        },
     }
 
     local menu = Menu:new{
@@ -1396,6 +1610,7 @@ function M:showHistoricalFigureDetails(fig)
                 {
                     text = self.loc:t("find_mentions") or "Find Mentions",
                     callback = function()
+                        if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                         self:showMentionsForEntity(fig)
                     end,
                 },
@@ -1425,6 +1640,7 @@ function M:showHistoricalFigureDetails(fig)
                 ok_text = self.loc:t("find_mentions") or "Find Mentions",
                 cancel_text = self.loc:t("close") or "Close",
                 ok_callback = function()
+                    if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                     self:showMentionsForEntity(fig)
                 end,
                 cancel_callback = function()
