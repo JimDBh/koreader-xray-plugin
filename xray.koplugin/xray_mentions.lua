@@ -156,8 +156,7 @@ function M:buildMentionsMenuItems(entity)
     for _, m in ipairs(mentions) do
         local pg = m.page
         local snippet = m.snippet or ""
-        if #snippet > 100 then snippet = snippet:sub(1, 100):gsub("%s%S*$", "") .. "…" end
-        table.insert(items, {
+        if #snippet > 100 then snippet = snippet:sub(1, 100):gsub("%s%S*$", "") .. "…" end        table.insert(items, {
             text = "p." .. tostring(pg) .. " \xE2\x80\x94 " .. (m.chapter or "") .. ((snippet ~= "") and ("\n" .. snippet) or ""),
             keep_menu_open = true,
             callback = function()

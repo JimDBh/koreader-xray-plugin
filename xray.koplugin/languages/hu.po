@@ -50,6 +50,36 @@ msgstr "Béta csatorna bekapcsolva"
 msgid "beta_preference_desc"
 msgstr "Válassza ki a kívánt frissítési csatornát:"
 
+msgid "book_mode_auto"
+msgstr "Auto"
+
+msgid "book_mode_desc"
+msgstr "Select the mode for this book."
+
+msgid "book_mode_fiction"
+msgstr "Fiction"
+
+msgid "book_mode_nonfiction"
+msgstr "Non-Fiction"
+
+msgid "book_mode_saved"
+msgstr "Book mode saved!"
+
+msgid "book_type_about"
+msgstr "The Book Type determines which AI extraction strategy is used and which features are available.\n\n- Fiction: Focuses on narrative, characters, and plot timeline.\n- Non-Fiction: Focuses on terms, concepts, and historical figures.\n\n'Auto-Detect' will let the AI decide after the first fetch."
+
+msgid "book_type_auto"
+msgstr "Auto-Detect"
+
+msgid "book_type_fiction"
+msgstr "Fiction"
+
+msgid "book_type_nonfiction"
+msgstr "Non-Fiction"
+
+msgid "book_type_saved"
+msgstr "Book Type saved!"
+
 msgid "cache_cleared"
 msgstr "Gyorsítótár törölve!\n\nMost már lekérdezhet új adatokat:\nMenü → X-Ray → AI adatok lekérdezése"
 
@@ -91,6 +121,9 @@ msgstr "BEÁLLÍTVA"
 
 msgid "current_language"
 msgstr "hu"
+
+msgid "current_mode"
+msgstr "Current: "
 
 msgid "custom_api_endpoint_hint"
 msgstr "pl. https://openrouter.ai/api/v1/chat/completions"
@@ -170,6 +203,9 @@ msgstr "A kiválasztott AI modell nem érhető el, vagy a végpont URL-je hibás
 msgid "error_model_not_found_title"
 msgstr "A modell nem található"
 
+msgid "error_no_api_key"
+msgstr "error_no_api_key"
+
 msgid "error_parse_desc"
 msgstr "Az AI olyan választ küldött vissza, amelyet nem lehetett feldolgozni. Ez átmeneti hiba lehet."
 
@@ -203,6 +239,9 @@ msgstr "A lekérdezés sikertelen"
 msgid "extracting_more_characters"
 msgstr "További szereplők kinyerése..."
 
+msgid "extracting_more_terms"
+msgstr "Extracting additional terms..."
+
 msgid "fetch_button"
 msgstr "Lekérdezés"
 
@@ -230,8 +269,17 @@ msgstr "Teljes könyv mód"
 msgid "label_aliases"
 msgstr "ÁLNEVEK"
 
+msgid "label_category"
+msgstr "CATEGORY"
+
+msgid "label_definition"
+msgstr "DEFINITION"
+
 msgid "label_description"
 msgstr "LEÍRÁS"
+
+msgid "label_expanded"
+msgstr "STANDS FOR"
 
 msgid "label_gender"
 msgstr "NEM"
@@ -335,6 +383,9 @@ msgstr "Auto X-Ray beállítások"
 msgid "menu_beta_channel"
 msgstr "Béta csatorna beállításai"
 
+msgid "menu_book_mode"
+msgstr "Book Type"
+
 msgid "menu_characters"
 msgstr "Szereplők"
 
@@ -361,6 +412,9 @@ msgstr "Szerzői infó lekérdezése (AI)"
 
 msgid "menu_fetch_more_chars"
 msgstr "További szereplők lekérdezése"
+
+msgid "menu_fetch_more_terms"
+msgstr "Fetch More Terms"
 
 msgid "menu_historical_figures"
 msgstr "Történelmi alakok"
@@ -391,6 +445,9 @@ msgstr "Másodlagos AI modell"
 
 msgid "menu_settings"
 msgstr "Beállítások"
+
+msgid "menu_terms"
+msgstr "Glossary"
 
 msgid "menu_timeline"
 msgstr "Idővonal"
@@ -440,6 +497,9 @@ msgstr "fizetős"
 msgid "msg_added_characters"
 msgstr "%d új szereplő hozzáadva!"
 
+msgid "msg_added_terms"
+msgstr "Added %d new terms!"
+
 msgid "msg_fetch_failed"
 msgstr "AI lekérdezés sikertelen"
 
@@ -475,6 +535,9 @@ msgstr "Még nincsenek adatok a történelmi alakokról.\n\nKérjük, használja
 
 msgid "no_location_data"
 msgstr "Még nincsenek helyszínadatok. Kérjük, használja előbb az 'X-Ray adatok lekérdezése' funkciót."
+
+msgid "no_terms_data"
+msgstr "No terms data yet. Please use 'Fetch X-Ray Data' first."
 
 msgid "no_timeline_data"
 msgstr "Még nincsenek idővonal-adatok.\n\nKérjük, használja előbb az 'X-Ray adatok lekérdezése' funkciót.\n\nAz AI időrendi sorrendben mutatja a legfontosabb eseményeket."
@@ -521,6 +584,9 @@ msgstr "Szereplő keresése"
 msgid "search_hint"
 msgstr "Adja meg a szereplő nevét"
 
+msgid "search_term"
+msgstr "Search Terms"
+
 msgid "spoiler_free_about"
 msgstr "A spoilermentes mód a könyvben már elolvasott oldalakra korlátozza az AI kinyerését (a jelenlegi oldaláig), megakadályozva a jövőbeli fejezetekből származó spoilereket.\n\nA Teljes könyv mód a teljes könyvet elemzi, ami spoilereket tartalmazhat."
 
@@ -535,6 +601,9 @@ msgstr "Válassza ki a spoiler-preferenciát az X-Ray adatokhoz:"
 
 msgid "spoiler_preference_title"
 msgstr "Spoiler-preferencia"
+
+msgid "term_not_found"
+msgstr "No term found matching '%s'"
 
 msgid "this_chapter"
 msgstr "Ez a fejezet"
@@ -616,3 +685,4 @@ msgstr "Hozzáad egy 'X-Ray' gombot a szótár és kijelölés menükhöz az azo
 
 msgid "yes"
 msgstr "Igen"
+

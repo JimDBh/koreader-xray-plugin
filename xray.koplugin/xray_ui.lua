@@ -664,6 +664,19 @@ end
 function M:showTermDetails(term)
     local name = term.name or "???"
     local lines = { (self.loc:t("label_name") or "NAME") .. ": " .. name }
+    if term.aliases and type(term.aliases) == "table" and #term.aliases > 0 then
+        local meaningful_aliases = {}
+        local name_lower = name:lower()
+        for _, alias in ipairs(term.aliases) do
+            local al_lower = tostring(alias):lower()
+            if #al_lower > 1 and not name_lower:find(al_lower, 1, true) then
+                table.insert(meaningful_aliases, alias)
+            end
+        end
+        if #meaningful_aliases > 0 then
+            table.insert(lines, (self.loc:t("label_aliases") or "ALIASES") .. ": " .. table.concat(meaningful_aliases, ", "))
+        end
+    end
     if term.expanded and term.expanded ~= "" and term.expanded ~= term.name then
         table.insert(lines, (self.loc:t("label_expanded") or "STANDS FOR") .. ": " .. term.expanded)
     end
@@ -773,6 +786,13 @@ function M:findTermByName(word)
     for _, term in ipairs(self.terms) do
         if (term.name or ""):lower() == query then
             return term
+        end
+        if term.aliases and type(term.aliases) == "table" then
+            for _, alias in ipairs(term.aliases) do
+                if tostring(alias):lower() == query then
+                    return term
+                end
+            end
         end
     end
     return nil

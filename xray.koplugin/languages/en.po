@@ -686,18 +686,3 @@ msgstr "Adds an 'X-Ray' button to dictionary and selection menus for instant loo
 msgid "yes"
 msgstr "Yes"
 
-msgid "mentions_title"
-msgstr "Mentions: %s"
-
-msgid "mentions_none"
-msgstr "No mentions found for '%s' yet."
-
-msgid "mentions_refresh"
-msgstr "Refresh Mentions"
-
-msgid "mentions_scanning"
-msgstr "Scanning... %1 of %2 chapters"
-
-msgid "mentions_at_location"
-msgstr "Mention: %s"
-

@@ -495,6 +495,7 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
                         existing.definition = new_term.definition
                     end
                     existing.expanded = new_term.expanded
+                    existing.aliases = new_term.aliases
                     found = true; break
                 end
             end

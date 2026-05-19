@@ -213,4 +213,135 @@ describe("xray_terms", function()
             assert.are.equal("Jedi", mock_plugin.book_data.terms[1].name)
         end)
     end)
+
+    describe("Glossary Term Aliases and Mention Scanning Optimization", function()
+        it("should dynamically inject aliases schema into prompts", function()
+            local en_prompts = require("prompts/en")
+            xray_aihelper.prompts = en_prompts
+            local result = xray_aihelper:createPrompt("Title", "Author", {}, "comprehensive_xray")
+            
+            assert.is_not_nil(result:find('"aliases"'))
+            assert.is_not_nil(result:find("do not hallucinate external synonyms"))
+        end)
+
+        it("should merge and persist term aliases", function()
+            local mock_fetch = require("xray_fetch")
+            local mock_plugin = {
+                ui = {
+                    document = {
+                        file = "test_book.epub",
+                        getPageCount = function() return 100 end,
+                        getToc = function() return {} end
+                    },
+                    getCurrentPage = function() return 10 end
+                },
+                loc = { t = function(self, s) return s end },
+                cache_manager = {
+                    loadCache = function() return { terms = { { name = "Jedi", definition = "Force users" } } } end,
+                    saveCache = function() return true end
+                },
+                deduplicateByName = function(self, data, key) return data end,
+                sortDataByFrequency = function(self, data, text, key) return data end,
+                isNonNarrativeChapter = function() return false end,
+                assignTimelinePages = function() end,
+                sortTimelineByTOC = function() end,
+                log = function() end
+            }
+            setmetatable(mock_plugin, { __index = mock_fetch })
+
+            local test_data = {
+                characters = {},
+                locations = {},
+                historical_figures = {},
+                timeline = {},
+                terms = {
+                    { name = "Jedi", definition = "Force users", aliases = { "Jedi Knights", "Force Wielders" } }
+                },
+                book_type = "fiction"
+            }
+
+            mock_plugin:finalizeXRayData(test_data, "Test Book", "Test Author", "Some text context", true, true, 10)
+            assert.are.equal(1, #mock_plugin.book_data.terms)
+            local term = mock_plugin.book_data.terms[1]
+            assert.is_not_nil(term.aliases)
+            assert.are.equal("Jedi Knights", term.aliases[1])
+        end)
+
+        it("should find terms by their aliases", function()
+            local mock_plugin = {
+                terms = {
+                    { name = "Jedi Order", definition = "The Jedi", aliases = { "Jedi Knights" } }
+                },
+                loc = { t = function(self, s) return s end }
+            }
+            local xray_ui = require("xray_ui")
+            setmetatable(mock_plugin, { __index = xray_ui })
+
+            local found = mock_plugin:findTermByName("Jedi Knights")
+            assert.is_not_nil(found)
+            assert.are.equal("Jedi Order", found.name)
+        end)
+
+        it("should strictly enforce word boundaries and prevent substring matches", function()
+            local analyzer = require("xray_chapteranalyzer")
+            local doc = {
+                getTextFromXPointers = function() return "Inside a flower there is airflow. A smooth flow of water is nice." end,
+                getTextFromXPointer = function() return "Inside a flower there is airflow. A smooth flow of water is nice." end
+            }
+            local ui = { document = doc, loc = { t = function(self, s) return s end } }
+            local toc_entry = { title = "Chapter 1", page = 1, xpointer = "xp1" }
+            
+            local entity = {
+                name = "flow",
+                definition = "A continuous movement",
+                is_term = true
+            }
+            
+            local mentions = analyzer:findMentionsInChapter(ui, entity, toc_entry, nil)
+            -- Should ONLY match "flow" and not "flower" or "airflow"
+            assert.are.equal(1, #mentions)
+            assert.is_not_nil(mentions[1].snippet:find("smooth flow of water"))
+        end)
+
+        it("should disable sub-word auto-extraction for multi-word terms", function()
+            local analyzer = require("xray_chapteranalyzer")
+            local doc = {
+                getTextFromXPointers = function() return "The room had a strong airflow. We watched the nector flow." end,
+                getTextFromXPointer = function() return "The room had a strong airflow. We watched the nector flow." end
+            }
+            local ui = { document = doc, loc = { t = function(self, s) return s end } }
+            local toc_entry = { title = "Chapter 1", page = 1, xpointer = "xp1" }
+            
+            local entity = {
+                name = "nector flow",
+                definition = "Flow of nector",
+                is_term = true
+            }
+            
+            local mentions = analyzer:findMentionsInChapter(ui, entity, toc_entry, nil)
+            -- Should ONLY match "nector flow", and NOT "airflow" (which would happen if it split into "flow")
+            assert.are.equal(1, #mentions)
+            assert.is_not_nil(mentions[1].snippet:find("nector flow"))
+        end)
+
+        it("should support pluralized variants for multi-word terms", function()
+            local analyzer = require("xray_chapteranalyzer")
+            local doc = {
+                getTextFromXPointers = function() return "The nector flows were sweet." end,
+                getTextFromXPointer = function() return "The nector flows were sweet." end
+            }
+            local ui = { document = doc, loc = { t = function(self, s) return s end } }
+            local toc_entry = { title = "Chapter 1", page = 1, xpointer = "xp1" }
+            
+            local entity = {
+                name = "nector flow",
+                definition = "Flow of nector",
+                is_term = true
+            }
+            
+            local mentions = analyzer:findMentionsInChapter(ui, entity, toc_entry, nil)
+            assert.are.equal(1, #mentions)
+            assert.is_not_nil(mentions[1].snippet:find("nector flows"))
+        end)
+    end)
 end)

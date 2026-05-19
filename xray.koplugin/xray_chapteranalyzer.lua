@@ -1027,55 +1027,17 @@ function ChapterAnalyzer:findMentionsInChapter(ui, entity, toc_entry, next_toc_e
         end
         
         if is_term then
-            -- For multi-word terms, extract significant content words as aliases (Change 2)
-            local clean_name = stripped or name
-            local words = {}
-            for w in clean_name:gmatch("[^%s%-]+") do
-                table.insert(words, w)
-            end
-            
-            if #words > 1 then
-                -- Multi-word: find significant word(s)
-                local stop_words = {
-                    ["the"] = true, ["and"] = true, ["for"] = true, ["with"] = true,
-                    ["from"] = true, ["that"] = true, ["this"] = true, ["these"] = true,
-                    ["those"] = true, ["their"] = true, ["about"] = true, ["under"] = true,
-                    ["above"] = true, ["through"] = true, ["after"] = true, ["before"] = true,
-                    ["between"] = true, ["among"] = true, ["against"] = true, ["order"] = true,
-                    ["house"] = true, ["clan"] = true, ["guild"] = true, ["system"] = true
-                }
-                local significant_words = {}
-                for _, w in ipairs(words) do
-                    local wl = w:lower():gsub("[%p%s]+", "")
-                    if #wl >= 4 and not stop_words[wl] then
-                        table.insert(significant_words, wl)
-                    end
-                end
-                
-                -- If we found distinct significant words, add them as aliases (if not too generic)
-                for _, sw in ipairs(significant_words) do
-                    if not isTooGeneric(sw) then
-                        local exists = false
-                        for _, t in ipairs(terms) do
-                            if t.s == sw then exists = true; break end
-                        end
-                        if not exists then
-                            table.insert(terms, { s = sw, l = #sw })
-                        end
-                    end
+            -- Never split multi-word terms into single-word aliases.
+            -- Instead, apply plural/singular variations to the full term name.
+            if name_lower:sub(-1) == "s" then
+                local singular = name_lower:sub(1, -2)
+                if #singular > 3 and not isTooGeneric(singular) then
+                    table.insert(terms, { s = singular, l = #singular })
                 end
             else
-                -- Single word term: handle plural/singular variations safely
-                if name_lower:sub(-1) == "s" then
-                    local singular = name_lower:sub(1, -2)
-                    if #singular > 3 and not isTooGeneric(singular) then
-                        table.insert(terms, { s = singular, l = #singular })
-                    end
-                else
-                    local plural = name_lower .. "s"
-                    if not isTooGeneric(plural) then
-                        table.insert(terms, { s = plural, l = #plural })
-                    end
+                local plural = name_lower .. "s"
+                if not isTooGeneric(plural) then
+                    table.insert(terms, { s = plural, l = #plural })
                 end
             end
         else
@@ -1117,10 +1079,12 @@ function ChapterAnalyzer:findMentionsInChapter(ui, entity, toc_entry, next_toc_e
 
     local pos = 1
 
-    -- Pre-calculate the first match position for each term
-    -- For short terms (< 4 chars), enforce word boundaries
+    -- Pre-calculate the first match position for each term.
+    -- Enforce strict word boundaries for all single-word terms (no spaces or hyphens)
+    -- to prevent substring matches (e.g. "flow" matching "airflow" or "flower").
     for _, t in ipairs(terms) do
-        if t.l < 4 then
+        local is_single_word = not t.s:find("[%s%-]")
+        if is_single_word then
             local safe_s = t.s:gsub("([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
             t.pattern = "%f[%w]" .. safe_s .. "%f[%W]"
             t.next_p = text_lower:find(t.pattern, pos)

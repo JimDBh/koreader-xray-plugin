@@ -1122,6 +1122,12 @@ function AIHelper:createPrompt(title, author, context, section_name, targeted_wo
             end
         end
     end
+    -- Dynamically inject "aliases" into the "terms" JSON schema template.
+    -- This inserts `"aliases": ["Alias 1", "Alias 2"],` before `"expanded":` translation-safely.
+    if template then
+        template = template:gsub('"expanded":', '"aliases": ["Alias 1", "Alias 2"],\n      "expanded":')
+    end
+
     local p = (context and context.reading_percent) or 100
     local success, final_prompt
     if section_name == "single_word_lookup" then
@@ -1134,6 +1140,10 @@ function AIHelper:createPrompt(title, author, context, section_name, targeted_wo
         success, final_prompt = pcall(string.format, template, enhanced_title, enhanced_author, p, exclude, p)
     else
         success, final_prompt = pcall(string.format, template, enhanced_title, enhanced_author, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p)
+    end
+
+    if section_name == "comprehensive_xray" or section_name == "more_terms" then
+        extra_context = extra_context .. "\n- For each term, provide up to 3 alternative names, acronyms, or synonyms in an 'aliases' array. CRITICAL: These aliases MUST be variations or names that actually appear in the provided book text; do not hallucinate external synonyms."
     end
     if not success then final_prompt = string.format("Extract %s data.", section_name) end
     if #extra_context > 0 then final_prompt = final_prompt .. extra_context end
