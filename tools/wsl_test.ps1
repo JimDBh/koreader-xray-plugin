@@ -6,6 +6,28 @@ $PluginDir = "xray.koplugin"
 $WSLDest = "~/.config/koreader/plugins/xray.koplugin"
 $SyntaxScript = "tools/check_syntax.py"
 
+# Probe for the squashfs-root location in WSL
+$SquashPath = ""
+$UserNameLower = $env:USERNAME.ToLower()
+$ProbedPaths = @(
+    "/home/jimmy/squashfs-root",
+    "/home/$env:USERNAME/squashfs-root",
+    "/home/$UserNameLower/squashfs-root",
+    "/mnt/c/Users/$env:USERNAME/squashfs-root",
+    "/mnt/c/Users/$UserNameLower/squashfs-root"
+)
+foreach ($path in $ProbedPaths) {
+    $null = wsl test -d $path
+    if ($LASTEXITCODE -eq 0) {
+        $SquashPath = $path
+        break
+    }
+}
+if (-not $SquashPath) {
+    $SquashPath = "/home/jimmy/squashfs-root"
+}
+Write-Host "Using KOReader installation path: $SquashPath" -ForegroundColor Yellow
+
 function Run-Workflow {
     Write-Host "`n--- Starting Verification Workflow ---" -ForegroundColor Cyan
     
@@ -31,7 +53,7 @@ function Run-Workflow {
 
     # 2. Unit Tests
     Write-Host "Running unit tests (Bundled LuaJIT in WSL)..."
-    wsl /home/jimmy/squashfs-root/usr/lib/koreader/luajit tools/spec_runner.lua
+    wsl env SQUASHFS_ROOT=$SquashPath "$SquashPath/usr/lib/koreader/luajit" tools/spec_runner.lua
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Tests FAILED. Aborting sync." -ForegroundColor Red
         return $false
@@ -72,7 +94,7 @@ function Run-Workflow {
     Start-Sleep -Seconds 1
 
     # Define start command
-    $DefaultCmd = 'C:\Windows\System32\wsl.exe --exec dbus-launch --exit-with-session bash -c "cd /home/jimmy/squashfs-root && ./AppRun"'
+    $DefaultCmd = "C:\Windows\System32\wsl.exe --exec dbus-launch --exit-with-session bash -c `"cd $SquashPath && ./AppRun`""
     $StartCmd = if ($env:KOREADER_START_CMD) { $env:KOREADER_START_CMD } else { $DefaultCmd }
     
     Write-Host "Starting KOReader: $StartCmd"

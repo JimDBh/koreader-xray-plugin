@@ -1,5 +1,5 @@
--- Custom Spec Runner using KOReader's Luajit
-package.path = package.path .. ";/home/jimmy/squashfs-root/usr/lib/koreader/common/?.lua;/home/jimmy/squashfs-root/usr/lib/koreader/?.lua;xray.koplugin/?.lua;?.lua"
+local squashfs_root = os.getenv("SQUASHFS_ROOT") or "/home/jimmy/squashfs-root"
+package.path = package.path .. ";" .. squashfs_root .. "/usr/lib/koreader/common/?.lua;" .. squashfs_root .. "/usr/lib/koreader/?.lua;xray.koplugin/?.lua;?.lua"
 
 local stats = { passed = 0, failed = 0, errors = {} }
 local before_each_stack = {}

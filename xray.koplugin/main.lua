@@ -80,6 +80,24 @@ function XRayPlugin:init()
         end
     end
 
+    -- Clean up orphaned background fetch files from previous sessions
+    pcall(function()
+        local DataStorage = require("datastorage")
+        local settings_xray_dir = DataStorage:getSettingsDir() .. "/xray"
+        local ok, lfs = pcall(require, "libs/libkoreader-lfs")
+        if not ok or type(lfs) ~= "table" then
+            ok, lfs = pcall(require, "lfs")
+        end
+        if ok and lfs and lfs.dir then
+            for file in lfs.dir(settings_xray_dir) do
+                if file:find("^bg_fetch_.*%.json$") then
+                    os.remove(settings_xray_dir .. "/" .. file)
+                    self:log("XRayPlugin: Cleaned up orphaned fetch file " .. file)
+                end
+            end
+        end
+    end)
+
     local Localization = require(plugin_path .. "localization_xray")
     self.loc = Localization
     self.loc:init(self.path)

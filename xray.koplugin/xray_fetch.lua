@@ -298,7 +298,24 @@ function M:continueWithFetch(reading_percent, is_update, last_fetch_page, is_sil
             end
 
             local DataStorage = require("datastorage")
-            local result_file = DataStorage:getSettingsDir() .. "/xray/bg_fetch_" .. tostring(os.time()) .. ".json"
+            local settings_xray_dir = DataStorage:getSettingsDir() .. "/xray"
+
+            -- Clean up any orphaned fetch files from previous cancelled/timed-out fetches in this session
+            pcall(function()
+                local ok, lfs = pcall(require, "libs/libkoreader-lfs")
+                if not ok or type(lfs) ~= "table" then
+                    ok, lfs = pcall(require, "lfs")
+                end
+                if ok and lfs and lfs.dir then
+                    for file in lfs.dir(settings_xray_dir) do
+                        if file:find("^bg_fetch_.*%.json$") then
+                            os.remove(settings_xray_dir .. "/" .. file)
+                        end
+                    end
+                end
+            end)
+
+            local result_file = settings_xray_dir .. "/bg_fetch_" .. tostring(os.time()) .. ".json"
             local started = self.ai_helper:makeRequestAsync(req_params, result_file)
             if not started then
                 if wait_msg then UIManager:close(wait_msg) end
