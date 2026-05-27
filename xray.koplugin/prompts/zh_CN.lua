@@ -215,6 +215,56 @@ If `is_valid` is false:
   "error_message": "简要说明为什么这不是人物或地点。"
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[书名: %s
+作者: %s
+
+任务: 确定本书是否为某个命名系列的一部分。
+仅返回有效的 JSON:
+{
+  "is_series": true,
+  "series_name": "时光之轮",
+  "book_index": 3,
+  "total_books_known": 14
+}
+如果这不是系列图书，返回:
+{ "is_series": false }]],
+
+    prior_book_list = [[系列: %s
+当前图书索引: %d
+
+任务: 列出在该系列中位于当前图书之前的第 1 至第 %d 本书的标题（如果作者与 "%s" 不同，还需列出作者）。
+仅返回有效的 JSON:
+{
+  "prior_books": [
+    { "index": 1, "title": "世界之眼", "author": "罗伯特·乔丹" }
+  ]
+}]],
+
+    series_book_summary = [[书名: %s
+作者: %s
+这是系列故事 "%s" 中的第 %d 本书。
+
+任务: 为即将开始阅读本系列下一本书的读者提供本书的完整回顾。
+包括: 关键角色（姓名、角色、书末的最终状态）、主要地点、关键剧情事件以及引入的重要世界观设定词汇。
+绝对不要剧透本书之后的任何续作内容。
+
+要求的 JSON 格式:
+{
+  "characters": [
+    { "name": "完整姓名", "aliases": [], "role": "...", "description": "本书结束时的状态 (最多 300 字)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["别名 1", "别名 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "图书总结", "event": "一段单一、高度详细、全面且包含多个段落的完整图书剧情、主要事件和结局回顾 (最多 2000 字)" }
+  ]
+}]],
+
     -- Fallback strings
     fallback = {
         unknown_book = "未知书籍",

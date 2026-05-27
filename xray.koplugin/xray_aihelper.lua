@@ -895,6 +895,7 @@ function AIHelper:loadSettings()
     if not settings.term_def_len       then settings.term_def_len       = 100      end
     if not settings.default_book_mode  then settings.default_book_mode  = "auto"   end
     if not settings.terms_visibility   then settings.terms_visibility   = "always" end
+    if settings.series_context_enabled == nil then settings.series_context_enabled = true end
     
     -- Migration to unified Primary and Secondary AI logic
     if type(settings.primary_ai) ~= "table" then
@@ -1146,6 +1147,14 @@ function AIHelper:createPrompt(title, author, context, section_name, targeted_wo
     elseif section_name == "more_terms" then
         local exclude = context.exclude_terms or "None"
         success, final_prompt = pcall(string.format, template, enhanced_title, enhanced_author, p, exclude, p)
+    elseif section_name == "series_detect" then
+        success, final_prompt = pcall(string.format, template, enhanced_title, enhanced_author)
+    elseif section_name == "prior_book_list" then
+        local idx = context and context.index or 1
+        success, final_prompt = pcall(string.format, template, context.series_name or "Unknown", idx, enhanced_author, idx - 1)
+    elseif section_name == "series_book_summary" then
+        local idx = context and context.index or 1
+        success, final_prompt = pcall(string.format, template, enhanced_title, enhanced_author, idx, context.series_name or "Unknown")
     else
         success, final_prompt = pcall(string.format, template, enhanced_title, enhanced_author, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p, p)
     end

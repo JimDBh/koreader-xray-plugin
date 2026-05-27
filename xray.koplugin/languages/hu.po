@@ -257,6 +257,9 @@ msgstr "Könyv elemzése X-Ray adatok generálásához..."
 msgid "fetching_author"
 msgstr "Szerzői információk lekérdezése innen: %s..."
 
+msgid "fetching_series_context"
+msgstr "Fetching series context: Book %d of %d…"
+
 msgid "fetching_wait"
 msgstr "⏳ Kérjük, várjon...\nEz a folyamat 10-50 másodpercet is igénybe vehet."
 
@@ -307,6 +310,9 @@ msgstr "Nyelvi eltérés"
 
 msgid "language_changed_reopen"
 msgstr "A nyelv megváltozott. Nyissa meg újra a menüt a változások megtekintéséhez."
+
+msgid "later"
+msgstr "Later"
 
 msgid "linked_entries"
 msgstr "Kapcsolódó bejegyzések"
@@ -416,6 +422,9 @@ msgstr "További szereplők lekérdezése"
 msgid "menu_fetch_more_terms"
 msgstr "Fetch More Terms"
 
+msgid "menu_fetch_series_context"
+msgstr "Fetch / Refresh Series Context"
+
 msgid "menu_historical_figures"
 msgstr "Történelmi alakok"
 
@@ -442,6 +451,9 @@ msgstr "AI gondolkodási erőfeszítés"
 
 msgid "menu_secondary_ai_model"
 msgstr "Másodlagos AI modell"
+
+msgid "menu_series_context"
+msgstr "Series Context"
 
 msgid "menu_settings"
 msgstr "Beállítások"
@@ -586,6 +598,33 @@ msgstr "Adja meg a szereplő nevét"
 
 msgid "search_term"
 msgstr "Search Terms"
+
+msgid "series_ask_later_msg"
+msgstr "Series recap postponed. We will ask again when you open/resume this book."
+
+msgid "series_context_enabled_toggle"
+msgstr "Enable Series Context"
+
+msgid "series_context_loaded"
+msgstr "Series context loaded (%d prior books)."
+
+msgid "series_context_prompt_text"
+msgstr "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)"
+
+msgid "series_context_prompt_title"
+msgstr "Series Detected"
+
+msgid "series_disabled_msg"
+msgstr "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
+
+msgid "series_no_prior_detected"
+msgstr "No prior books detected for this series."
+
+msgid "series_prior_books_header"
+msgstr "── Prior Books ──"
+
+msgid "series_prior_label"
+msgstr "[Prior]"
 
 msgid "spoiler_free_about"
 msgstr "A spoilermentes mód a könyvben már elolvasott oldalakra korlátozza az AI kinyerését (a jelenlegi oldaláig), megakadályozva a jövőbeli fejezetekből származó spoilereket.\n\nA Teljes könyv mód a teljes könyvet elemzi, ami spoilereket tartalmazhat."

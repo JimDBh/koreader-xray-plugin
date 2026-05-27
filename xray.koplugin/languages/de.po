@@ -257,6 +257,9 @@ msgstr "Buch wird analysiert, um X-Ray-Daten zu generieren..."
 msgid "fetching_author"
 msgstr "Autor-Info wird von %s abgerufen..."
 
+msgid "fetching_series_context"
+msgstr "Fetching series context: Book %d of %d…"
+
 msgid "fetching_wait"
 msgstr "⏳ Bitte warten...\nDieser Vorgang kann 10-50 Sekunden dauern."
 
@@ -307,6 +310,9 @@ msgstr "Falsche Sprache"
 
 msgid "language_changed_reopen"
 msgstr "Sprache geändert. Öffnen Sie das Menü erneut, um die Änderungen zu sehen."
+
+msgid "later"
+msgstr "Later"
 
 msgid "linked_entries"
 msgstr "Linked Entries"
@@ -416,6 +422,9 @@ msgstr "Weitere Charaktere abrufen"
 msgid "menu_fetch_more_terms"
 msgstr "Fetch More Terms"
 
+msgid "menu_fetch_series_context"
+msgstr "Fetch / Refresh Series Context"
+
 msgid "menu_historical_figures"
 msgstr "Historische Personen"
 
@@ -442,6 +451,9 @@ msgstr "AI Reasoning Effort"
 
 msgid "menu_secondary_ai_model"
 msgstr "Sekundäres KI-Modell"
+
+msgid "menu_series_context"
+msgstr "Series Context"
 
 msgid "menu_settings"
 msgstr "Einstellungen"
@@ -586,6 +598,33 @@ msgstr "Charakternamen eingeben"
 
 msgid "search_term"
 msgstr "Search Terms"
+
+msgid "series_ask_later_msg"
+msgstr "Series recap postponed. We will ask again when you open/resume this book."
+
+msgid "series_context_enabled_toggle"
+msgstr "Enable Series Context"
+
+msgid "series_context_loaded"
+msgstr "Series context loaded (%d prior books)."
+
+msgid "series_context_prompt_text"
+msgstr "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)"
+
+msgid "series_context_prompt_title"
+msgstr "Series Detected"
+
+msgid "series_disabled_msg"
+msgstr "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
+
+msgid "series_no_prior_detected"
+msgstr "No prior books detected for this series."
+
+msgid "series_prior_books_header"
+msgstr "── Prior Books ──"
+
+msgid "series_prior_label"
+msgstr "[Prior]"
 
 msgid "spoiler_free_about"
 msgstr "Der spoiler-freie Modus begrenzt die KI-Extraktion auf die Seiten, die Sie bereits gelesen haben (bis zu Ihrer aktuellen Seite), um Spoiler aus zukünftigen Kapiteln zu vermeiden.\n\nDer vollständige Buch-Modus analysiert das gesamte Buch, was Spoiler enthalten kann."

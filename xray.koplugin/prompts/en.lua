@@ -227,6 +227,59 @@ REQUIRED JSON FORMAT:
   "merged_description": "Combined and polished description (Max {MAX_CHAR_DESC} chars)"
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Book Title: %s
+Author: %s
+
+TASK: Determine if this book is part of a named series.
+Return ONLY valid JSON:
+{
+  "is_series": true,
+  "series_name": "The Wheel of Time",
+  "book_index": 3,
+  "total_books_known": 14
+}
+If this is NOT a series book, return:
+{ "is_series": false }]],
+
+    prior_book_list = [[Series: %s
+Current Book Index: %d
+
+TASK: List the titles (and authors if different from "%s") of books 1 through %d
+that come BEFORE the current book in this series.
+Return ONLY valid JSON:
+{
+  "prior_books": [
+    { "index": 1, "title": "The Eye of the World", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Book: %s
+Author: %s
+This is book %d in the series "%s".
+
+TASK: Provide a COMPLETE recap of this entire book for a reader
+who is ABOUT TO START the NEXT book in the series.
+Include: key characters (name, role, final status at book end), major locations,
+critical plot events, and important world-building terms introduced.
+NO SPOILERS for books BEYOND this one.
+
+REQUIRED JSON FORMAT:
+{
+  "characters": [
+    { "name": "Full Name", "aliases": [], "role": "...", "description": "Status at end of this book (max 300 chars)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Book Summary", "event": "A single, highly detailed, comprehensive multi-paragraph recap of the entire book's plot, main events, and resolution (max 2000 characters)" }
+  ]
+}]],
+
     -- Fallback strings
     fallback = {
         unknown_book = "Unknown Book",

@@ -217,6 +217,59 @@ If `is_valid` is false:
 ]],
 
     -- Yedek dizeler (Fallback)
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Kitap Adı: %s
+Yazar: %s
+
+GÖREV: Bu kitabın adlandırılmış bir serinin parçası olup olmadığını belirleyin.
+SADECE geçerli bir JSON döndürün:
+{
+  "is_series": true,
+  "series_name": "Zaman Çarkı",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Eğer bu bir seri kitabı DEĞİLSE, şunu döndürün:
+{ "is_series": false }]],
+
+    prior_book_list = [[Seri: %s
+Mevcut Kitap İndeksi: %d
+
+GÖREV: Bu seride mevcut kitaptan ÖNCE gelen 1. kitaptan %d. kitaba kadar olan
+kitapların adlarını (ve "%s" yazardan farklıysa yazarlarını) listeleyin.
+SADECE geçerli bir JSON döndürün:
+{
+  "prior_books": [
+    { "index": 1, "title": "Dünyanın Gözü", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Kitap: %s
+Yazar: %s
+Bu, "%s" serisindeki %d. kitaptır.
+
+GÖREV: Serideki BİR SONRAKİ kitaba BAŞLAMAK ÜZERE olan bir okuyucu için
+bu kitabın TAMAMINI kapsayan bir özet sağlayın.
+Şunları ekleyin: ana karakterler (ad, rol, kitap sonundaki durumları), ana mekanlar,
+kritik olay örgüsü gelişmeleri ve tanıtılan önemli dünya oluşturma terimleri.
+Bu kitabın ÖTESİNDEKİ kitaplar için SPOILER İÇERMESİN.
+
+GEREKLİ JSON FORMATI:
+{
+  "characters": [
+    { "name": "Tam Adı", "aliases": [], "role": "...", "description": "Bu kitabın sonundaki durumu (en fazla 300 karakter)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Kitap Özeti", "event": "Tüm kitabın olay örgüsünü, ana olaylarını ve sonucunu içeren, birkaç paragraftan oluşan tek, son derece ayrıntılı ve kapsamlı bir özet (en fazla 2000 karakter)" }
+  ]
+}]],
+
     fallback = {
         unknown_book = "Bilinmeyen Kitap",
         unknown_author = "Bilinmeyen Yazar",

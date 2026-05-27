@@ -215,6 +215,59 @@ If `is_valid` is false:
   "error_message": "Kurze Erklärung, warum dies kein Charakter oder Ort ist."
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Buchtitel: %s
+Autor: %s
+
+AUFGABE: Bestimmen Sie, ob dieses Buch Teil einer benannten Serie ist.
+Geben Sie NUR gültiges JSON zurück:
+{
+  "is_series": true,
+  "series_name": "Das Rad der Zeit",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Wenn dies KEIN Buch einer Serie ist, geben Sie Folgendes zurück:
+{ "is_series": false }]],
+
+    prior_book_list = [[Serie: %s
+Aktueller Buchindex: %d
+
+AUFGABE: Listen Sie die Titel (und Autoren, falls sie sich von "%s" unterscheiden) der Bücher 1 bis %d auf,
+die VOR dem aktuellen Buch in dieser Serie erschienen sind.
+Geben Sie NUR gültiges JSON zurück:
+{
+  "prior_books": [
+    { "index": 1, "title": "Das Auge der Welt", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Buch: %s
+Autor: %s
+Dies ist Buch %d in der Serie "%s".
+
+AUFGABE: Bieten Sie eine VOLLSTÄNDIGE Zusammenfassung dieses gesamten Buches für einen Leser an,
+der kurz davor steht, das NÄCHSTE Buch der Serie zu BEGINNEN.
+Beziehen Sie Folgendes ein: Hauptcharaktere (Name, Rolle, Endstatus am Buchende), Hauptorte,
+kritische Handlungsereignisse und wichtige eingeführte Begriffe zum Weltaufbau.
+KEINE SPOILER für Bücher JENSEITS dieses Buches.
+
+ERFORDERLICHES JSON-FORMAT:
+{
+  "characters": [
+    { "name": "Vollständiger Name", "aliases": [], "role": "...", "description": "Status am Ende dieses Buches (max. 300 Zeichen)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Buchzusammenfassung", "event": "Eine einzelne, hochdetaillierte, umfassende Zusammenfassung der Handlung, der Hauptereignisse und des Endes des gesamten Buches über mehrere Absätze (max. 2000 Zeichen)" }
+  ]
+}]],
+
     -- Fallback strings
     fallback = {
         unknown_book = "Unbekanntes Buch",

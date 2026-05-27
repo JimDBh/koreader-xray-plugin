@@ -215,6 +215,59 @@ If `is_valid` is false:
   "error_message": "Explication courte expliquant pourquoi ce n'est ni un personnage ni un lieu."
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Titre du livre : %s
+Auteur : %s
+
+TÂCHE : Déterminez si ce livre fait partie d'une série nommée.
+Retournez UNIQUEMENT un JSON valide :
+{
+  "is_series": true,
+  "series_name": "La Roue du Temps",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Si ce n'est PAS un livre de série, retournez :
+{ "is_series": false }]],
+
+    prior_book_list = [[Série : %s
+Index du livre actuel : %d
+
+TÂCHE : Listez les titres (et auteurs si différents de "%s") des livres 1 à %d
+qui précèdent le livre actuel dans cette série.
+Retournez UNIQUEMENT un JSON valide :
+{
+  "prior_books": [
+    { "index": 1, "title": "L'Œil du monde", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Livre : %s
+Auteur : %s
+Ceci est le livre %d de la série "%s".
+
+TÂCHE : Fournissez un résumé COMPLET de tout ce livre pour un lecteur
+qui est SUR LE POINT DE COMMENCER le PROCHAIN livre de la série.
+Incluez : les personnages clés (nom, rôle, état final à la fin du livre), les lieux principaux,
+les événements critiques de l'intrigue et les termes importants de la construction du monde présentés.
+PAS DE SPOILERS pour les livres AU-DELÀ de celui-ci.
+
+FORMAT JSON REQUIS :
+{
+  "characters": [
+    { "name": "Nom complet", "aliases": [], "role": "...", "description": "Statut à la fin de ce livre (max. 300 caractères)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Résumé du livre", "event": "Un résumé unique, très détaillé et complet en plusieurs paragraphes de l'intrigue, des événements principaux et de la résolution de tout le livre (max. 2000 caractères)" }
+  ]
+}]],
+
     -- Fallback strings
     fallback = {
         unknown_book = "Livre inconnu",

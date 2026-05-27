@@ -127,4 +127,39 @@ describe("xray_ui", function()
             assert.is_true(found)
         end)
     end)
+
+    describe("checkSeriesContext", function()
+        it("should show ButtonDialog with three options if online and series detected", function()
+            -- Mock NetworkMgr
+            package.loaded["ui/network/manager"] = {
+                isOnline = function() return true end
+            }
+            -- Mock series manager detectSeries
+            plugin.series_manager = {
+                detectSeries = function()
+                    return { name = "Mistborn", index = 2, slug = "mistborn" }
+                end
+            }
+            plugin.ai_helper = {
+                settings = {
+                    series_context_enabled = true
+                }
+            }
+            plugin.book_data = {}
+
+            plugin:checkSeriesContext()
+
+            local last = _G.ui_tracker.last_shown
+            assert.is_not_nil(last)
+            assert.are.equal("ButtonDialog", last.type)
+            assert.are.equal("series_context_prompt_title", last.args.title)
+            
+            -- Verify buttons structure (three options: Yes, Later, Don't ask again)
+            local buttons = last.args.buttons[1]
+            assert.are.equal(3, #buttons)
+            assert.are.equal("yes", buttons[1].text)
+            assert.are.equal("later", buttons[2].text)
+            assert.are.equal("dont_ask_again", buttons[3].text)
+        end)
+    end)
 end)
