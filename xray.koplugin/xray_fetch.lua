@@ -3,6 +3,7 @@
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local ConfirmBox = require("ui/widget/confirmbox")
+local ButtonDialog = require("ui/widget/buttondialog")
 local logger = require("logger")
 local plugin_path = ((...) or ""):match("(.-)[^%.]+$") or ""
 local utils = require(plugin_path .. "xray_utils")
@@ -588,7 +589,7 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
 
         local success_dialog
         local ButtonDialog = require("ui/widget/buttondialog")
-        success_dialog = ButtonDialog:new{ title = self.loc:t("fetch_successful") or "Fetch successful", text = summary, buttons = {{{ text = self.loc:t("ok"), callback = function() 
+        success_dialog = ButtonDialog:new{ title = (self.loc:t("fetch_successful") or "Fetch successful") .. "\n\n" .. summary, buttons = {{{ text = self.loc:t("ok"), callback = function() 
             UIManager:close(success_dialog) 
         end }}} }
         UIManager:show(success_dialog)
@@ -621,8 +622,7 @@ function M:fetchMoreCharacters()
         local is_cancelled = false
         local ButtonDialog = require("ui/widget/buttondialog")
         wait_msg = ButtonDialog:new{
-            title = self.loc:t("fetching_ai") or "Fetching AI...",
-            text = (self.loc:t("extracting_more_characters") or "Extracting additional characters...") .. "\n\n" .. title,
+            title = (self.loc:t("fetching_ai") or "Fetching AI...") .. "\n\n" .. (self.loc:t("extracting_more_characters") or "Extracting additional characters...") .. "\n\n" .. title,
             buttons = {{{
                 text = self.loc:t("cancel") or "Cancel",
                 callback = function()
@@ -777,8 +777,7 @@ function M:fetchMoreTerms()
         local ButtonDialog = require("ui/widget/buttondialog")
 
         local wait_msg = ButtonDialog:new{
-            title = self.loc:t("fetching_ai") or "Fetching AI...",
-            text = (self.loc:t("extracting_more_terms") or "Extracting additional terms...") .. "\n\n" .. title,
+            title = (self.loc:t("fetching_ai") or "Fetching AI...") .. "\n\n" .. (self.loc:t("extracting_more_terms") or "Extracting additional terms...") .. "\n\n" .. title,
             buttons = {{{
                 text = self.loc:t("cancel") or "Cancel",
                 callback = function()
@@ -905,8 +904,7 @@ function M:fetchAuthorInfo()
     local is_cancelled = false
     local ButtonDialog = require("ui/widget/buttondialog")
     wait_msg = ButtonDialog:new{
-        title = self.loc:t("fetching_author", "AI") or "Fetching Author...",
-        text = title .. " - " .. author,
+        title = (self.loc:t("fetching_author", "AI") or "Fetching Author...") .. "\n\n" .. title .. " - " .. author,
         buttons = {{{
             text = self.loc:t("cancel") or "Cancel",
             callback = function()
@@ -985,6 +983,368 @@ function M:checkWeeklyUpdate()
             self:log("XRayPlugin: Skipping weekly update check (offline)")
         end
     end
+end
+
+function M:mergeSeriesContext(cache_data, series_info)
+    if not cache_data or not series_info then return end
+
+    local function filterPrior(tbl)
+        local filtered = {}
+        for _, item in ipairs(tbl or {}) do
+            if item.source ~= "series_prior" then
+                table.insert(filtered, item)
+            end
+        end
+        return filtered
+    end
+
+    self.characters = filterPrior(self.characters)
+    self.locations = filterPrior(self.locations)
+    self.terms = filterPrior(self.terms)
+    self.timeline = filterPrior(self.timeline)
+
+    for idx = 1, series_info.index - 1 do
+        local book_data = cache_data.books and cache_data.books[idx]
+        if book_data then
+            for _, new_char in ipairs(book_data.characters or {}) do
+                local found = false
+                local lower_name = new_char.name:lower()
+                for _, existing_char in ipairs(self.characters) do
+                    local matches = false
+                    if existing_char.name:lower() == lower_name then
+                        matches = true
+                    else
+                        for _, alias in ipairs(existing_char.aliases or {}) do
+                            if alias:lower() == lower_name then
+                                matches = true
+                                break
+                            end
+                        end
+                    end
+                    
+                    if matches then
+                        found = true
+                        local prefix = string.format("[From Book %d] ", idx)
+                        if new_char.description and new_char.description ~= "" then
+                            if not existing_char.description:find(prefix, 1, true) then
+                                existing_char.description = prefix .. new_char.description .. "\n\n" .. existing_char.description
+                            end
+                        end
+                        break
+                    end
+                end
+                
+                if not found then
+                    local char_copy = {}
+                    for k, v in pairs(new_char) do char_copy[k] = v end
+                    char_copy.source = "series_prior"
+                    char_copy.source_book = idx
+                    table.insert(self.characters, char_copy)
+                end
+            end
+
+            for _, new_loc in ipairs(book_data.locations or {}) do
+                local found = false
+                local lower_name = new_loc.name:lower()
+                for _, existing_loc in ipairs(self.locations) do
+                    if existing_loc.name:lower() == lower_name then
+                        found = true
+                        local prefix = string.format("[From Book %d] ", idx)
+                        if new_loc.description and new_loc.description ~= "" then
+                            if not existing_loc.description:find(prefix, 1, true) then
+                                existing_loc.description = prefix .. new_loc.description .. "\n\n" .. existing_loc.description
+                            end
+                        end
+                        break
+                    end
+                end
+                if not found then
+                    local loc_copy = {}
+                    for k, v in pairs(new_loc) do loc_copy[k] = v end
+                    loc_copy.source = "series_prior"
+                    loc_copy.source_book = idx
+                    table.insert(self.locations, loc_copy)
+                end
+            end
+
+            for _, new_term in ipairs(book_data.terms or {}) do
+                local found = false
+                local lower_name = new_term.name:lower()
+                for _, existing_term in ipairs(self.terms) do
+                    if existing_term.name:lower() == lower_name then
+                        found = true
+                        local prefix = string.format("[From Book %d] ", idx)
+                        if new_term.definition and new_term.definition ~= "" then
+                            if not existing_term.definition:find(prefix, 1, true) then
+                                existing_term.definition = prefix .. new_term.definition .. "\n\n" .. existing_term.definition
+                            end
+                        end
+                        break
+                    end
+                end
+                if not found then
+                    local term_copy = {}
+                    for k, v in pairs(new_term) do term_copy[k] = v end
+                    term_copy.source = "series_prior"
+                    term_copy.source_book = idx
+                    table.insert(self.terms, term_copy)
+                end
+            end
+
+            local events = {}
+            for _, new_event in ipairs(book_data.timeline or {}) do
+                if new_event.event and new_event.event ~= "" then
+                    table.insert(events, new_event.event)
+                end
+            end
+            if #events > 0 then
+                local book_title = book_data.title or (cache_data.books and cache_data.books[idx] and cache_data.books[idx].title) or ""
+                local label
+                if book_title and book_title ~= "" then
+                    label = string.format("[Book %d: %s]", idx, book_title)
+                else
+                    label = string.format("[Book %d]", idx)
+                end
+                local consolidated_event = table.concat(events, "\n\n")
+                local ev_copy = {
+                    chapter = label,
+                    event = consolidated_event,
+                    page = -1000 + idx,
+                    source = "series_prior",
+                    source_book = idx
+                }
+                table.insert(self.timeline, ev_copy)
+            end
+        end
+    end
+
+    local toc = self.ui.document:getToc() or {}
+    self:assignTimelinePages(self.timeline, toc, true)
+    self:sortTimelineByTOC(self.timeline)
+
+    self.series_context_loaded = true
+    if not self.cache_manager then
+        self.cache_manager = require(plugin_path .. "xray_cachemanager"):new()
+    end
+    local book_path = self.ui.document.file
+    local cache = self.cache_manager:loadCache(book_path) or {}
+    cache.series_context_loaded = true
+    cache.series_slug = series_info.slug
+    cache.characters = self.characters
+    cache.locations = self.locations
+    cache.terms = self.terms
+    cache.timeline = self.timeline
+    self.cache_manager:saveCache(book_path, cache)
+    self.book_data = cache
+end
+
+function M:fetchSeriesContext(is_silent, init_wait_dialog, cancel_ref)
+    local function closeInitWait()
+        if init_wait_dialog then
+            UIManager:close(init_wait_dialog)
+            init_wait_dialog = nil
+        end
+    end
+
+    if cancel_ref and cancel_ref.cancelled then
+        self:log("XRayPlugin: Series: fetchSeriesContext early exit: cancel_ref is cancelled")
+        closeInitWait()
+        return
+    end
+
+    if not self.ui or not self.ui.document then
+        self:log("XRayPlugin: Series: fetchSeriesContext called with no document/ui, aborting")
+        closeInitWait()
+        return
+    end
+
+    if not self.ai_helper or not self.ai_helper.settings or not self.ai_helper.settings.series_context_enabled then
+        self:log("XRayPlugin: Series: fetchSeriesContext early exit: setting series_context_enabled is false or nil")
+        closeInitWait()
+        return
+    end
+
+    local props = self.ui.document:getProps() or {}
+    local title = sanitizeMetadata(props.title)
+    local author = sanitizeMetadata(props.authors)
+
+    self:log("XRayPlugin: Series: fetchSeriesContext starting for: title=" .. tostring(title) .. ", author=" .. tostring(author))
+
+    local series_info = self.series_manager:detectSeries(props, title, author, self.ai_helper)
+    if cancel_ref and cancel_ref.cancelled then
+        self:log("XRayPlugin: Series: fetchSeriesContext cancelled after detectSeries")
+        closeInitWait()
+        return
+    end
+
+    if not series_info or not series_info.name or not series_info.index or series_info.index <= 1 then
+        self:log("XRayPlugin: Series: No series detected or current book is the first one in the series. series_info=" .. (series_info and ("name=" .. tostring(series_info.name) .. ", index=" .. tostring(series_info.index)) or "nil"))
+        closeInitWait()
+        if not is_silent then
+            UIManager:show(InfoMessage:new{
+                text = self.loc:t("series_no_prior_detected") or "No prior books detected for this series.",
+                timeout = 5
+            })
+        end
+        return
+    end
+
+    local slug = series_info.slug
+    self:log("XRayPlugin: Series: Detected series=" .. series_info.name .. ", index=" .. tostring(series_info.index) .. ", slug=" .. tostring(slug))
+
+    local cache_data = self.series_manager:loadSeriesCache(slug) or { books = {} }
+    cache_data.books = cache_data.books or {}
+
+    local prior_books = self.series_manager:getPriorBookList(series_info, author, self.ai_helper)
+    if cancel_ref and cancel_ref.cancelled then
+        self:log("XRayPlugin: Series: fetchSeriesContext cancelled after getPriorBookList")
+        closeInitWait()
+        return
+    end
+
+    if #prior_books == 0 then
+        self:log("XRayPlugin: Series: getPriorBookList returned empty list, using generated placeholders")
+        for i = 1, series_info.index - 1 do
+            table.insert(prior_books, {
+                index = i,
+                title = string.format("%s (Book %d)", series_info.name, i),
+                author = author or "Unknown Author"
+            })
+        end
+    else
+        self:log("XRayPlugin: Series: getPriorBookList returned " .. tostring(#prior_books) .. " prior books")
+    end
+
+    local missing_books = {}
+    for _, book in ipairs(prior_books) do
+        local idx = book.index
+        if not cache_data.books[idx] then
+            self:log("XRayPlugin: Series: Cache MISS for book index " .. tostring(idx) .. ": " .. tostring(book.title))
+            table.insert(missing_books, book)
+        else
+            self:log("XRayPlugin: Series: Cache HIT for book index " .. tostring(idx) .. ": " .. tostring(book.title))
+        end
+    end
+
+    if #missing_books == 0 then
+        self:log("XRayPlugin: Series: All prior books are already cached. Merging context immediately.")
+        closeInitWait()
+        self:mergeSeriesContext(cache_data, series_info)
+        if not is_silent then
+            local count = series_info.index - 1
+            local loaded_msg = string.format(self.loc:t("series_context_loaded") or "Series context loaded (%d prior books).", count)
+            UIManager:show(InfoMessage:new{
+                text = loaded_msg,
+                timeout = 5
+            })
+        end
+        return
+    end
+
+    self:log("XRayPlugin: Series: Needs to fetch " .. tostring(#missing_books) .. " missing books from AI. Running when online.")
+
+    require("ui/network/manager"):runWhenOnline(function()
+        closeInitWait()
+        if cancel_ref and cancel_ref.cancelled then
+            self:log("XRayPlugin: Series: runWhenOnline fired after user cancelled")
+            return
+        end
+        local is_cancelled = cancel_ref and cancel_ref.cancelled or false
+        local wait_msg
+
+        local function showProgress(current_idx, total_count, book_title)
+            if is_silent then return end
+            closeInitWait()
+            if wait_msg then UIManager:close(wait_msg) end
+
+            local progress_text = string.format(self.loc:t("fetching_series_context") or "Fetching series context: Book %d of %d…", current_idx, total_count)
+            wait_msg = ButtonDialog:new{
+                title = progress_text .. "\n\n" .. book_title .. "\n\n" .. (self.loc:t("fetching_wait") or "This may take a moment.\nTap Cancel to stop."),
+                buttons = {{{
+                    text = self.loc:t("cancel") or "Cancel",
+                    callback = function()
+                        is_cancelled = true
+                        self:log("XRayPlugin: Series: User tapped Cancel on progress dialog.")
+                        if wait_msg then UIManager:close(wait_msg) end
+                    end
+                }}}
+            }
+            UIManager:show(wait_msg)
+        end
+
+        local function fetchNext(step_idx)
+            if is_cancelled then
+                self:log("XRayPlugin: Series: fetch series context cancelled by user.")
+                return
+            end
+
+            if step_idx > #missing_books then
+                self:log("XRayPlugin: Series: All missing books fetched. Saving series cache and merging context.")
+                if wait_msg then UIManager:close(wait_msg) end
+                self.series_manager:saveSeriesCache(slug, cache_data)
+                self:mergeSeriesContext(cache_data, series_info)
+
+                if not is_silent then
+                    local count = series_info.index - 1
+                    local loaded_msg = string.format(self.loc:t("series_context_loaded") or "Series context loaded (%d prior books).", count)
+                    UIManager:show(InfoMessage:new{
+                        text = loaded_msg,
+                        timeout = 5
+                    })
+                end
+                return
+            end
+
+            local current_book = missing_books[step_idx]
+            self:log("XRayPlugin: Series: Fetching AI context for book " .. tostring(current_book.index) .. " (" .. tostring(step_idx) .. "/" .. tostring(#missing_books) .. "): " .. tostring(current_book.title))
+            showProgress(step_idx, #missing_books, current_book.title)
+
+            UIManager:scheduleIn(0.5, function()
+                if is_cancelled then return end
+
+                local context = {
+                    series_name = series_info.name,
+                    index = current_book.index
+                }
+                local prompt = self.ai_helper:createPrompt(current_book.title, current_book.author or author, context, "series_book_summary")
+                
+                self.ai_helper:setTrapWidget(wait_msg)
+                local result, err_code, err_msg = self.ai_helper:executeUnifiedRequest(prompt)
+                self.ai_helper:resetTrapWidget()
+
+                if is_cancelled then return end
+
+                if not result then
+                    self:log("XRayPlugin: Series: Failed fetching book summary for " .. tostring(current_book.title) .. ", err_code=" .. tostring(err_code) .. ", err_msg=" .. tostring(err_msg))
+                    if wait_msg then UIManager:close(wait_msg) end
+                    if not is_silent then
+                        local err_title, err_text = utils:getFriendlyError(err_code, err_msg, self.loc)
+                        UIManager:show(ConfirmBox:new{
+                            text = err_title .. "\n\n" .. err_text,
+                            ok_text = self.loc:t("ok") or "OK",
+                            cancel_text = nil
+                        })
+                    end
+                    return
+                end
+
+                self:log("XRayPlugin: Series: Fetched context for " .. tostring(current_book.title) .. ". Characters=" .. tostring(#(result.characters or {})) .. ", locations=" .. tostring(#(result.locations or {})) .. ", terms=" .. tostring(#(result.terms or {})) .. ", timeline=" .. tostring(#(result.timeline or {})))
+
+                cache_data.books[current_book.index] = {
+                    title = current_book.title,
+                    author = current_book.author,
+                    characters = result.characters or {},
+                    locations = result.locations or {},
+                    terms = result.terms or {},
+                    timeline = result.timeline or {}
+                }
+
+                fetchNext(step_idx + 1)
+            end)
+        end
+
+        fetchNext(1)
+    end)
 end
 
 return M

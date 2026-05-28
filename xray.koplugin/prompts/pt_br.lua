@@ -222,6 +222,59 @@ If `is_valid` is false:
 ]],
 
     -- Strings de reserva (Fallback)
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Título do livro: %s
+Autor: %s
+
+TAREFA: Determine se este livro faz parte de uma série nomeada.
+Retorne APENAS um JSON válido:
+{
+  "is_series": true,
+  "series_name": "A Roda do Tempo",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Se este NÃO for um livro de série, retorne:
+{ "is_series": false }]],
+
+    prior_book_list = [[Série: %s
+Índice do livro atual: %d
+
+TAREFA: Liste os títulos (e autores se diferentes de "%s") dos livros de 1 a %d
+que vêm ANTES do livro atual nesta série.
+Retorne APENAS um JSON válido:
+{
+  "prior_books": [
+    { "index": 1, "title": "O Olho do Mundo", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Livro: %s
+Autor: %s
+Este é o livro %d da série "%s".
+
+TAREFA: Forneça um resumo COMPLETO de todo este livro para um leitor
+que está PRESTES A COMEÇAR o PRÓXIMO livro da série.
+Inclua: personagens principais (nome, papel, estado final no fim do livro), locais principais,
+eventos críticos da trama e termos importantes de construção de mundo introduzidos.
+SEM SPOILERS para livros ALÉM deste.
+
+FORMATO JSON EXIGIDO:
+{
+  "characters": [
+    { "name": "Nome Completo", "aliases": [], "role": "...", "description": "Status no final deste livro (máx. 300 caracteres)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Resumo do Livro", "event": "Um resumo único, altamente detalhado e completo em vários parágrafos do enredo do livro inteiro, principais eventos e desfecho (máx. 2000 caracteres) You MUST format this recap using multiple distinct paragraphs separated by double newlines (\\n\\n) for readability instead of a single wall of text." }
+  ]
+}]],
+
     fallback = {
         unknown_book = "Livro Desconhecido",
         unknown_author = "Autor Desconhecido",

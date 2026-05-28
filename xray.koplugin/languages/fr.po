@@ -257,6 +257,12 @@ msgstr "Analyse du livre pour générer les données X-Ray..."
 msgid "fetching_author"
 msgstr "Récupération des infos auteur depuis %s..."
 
+msgid "fetching_series_context"
+msgstr "Fetching series context: Book %d of %d…"
+
+msgid "fetching_series_info"
+msgstr "Identification des livres de la série..."
+
 msgid "fetching_wait"
 msgstr "⏳ Veuillez patienter...\nCe processus peut prendre 10 à 50 secondes."
 
@@ -307,6 +313,9 @@ msgstr "Langue Incorrecte"
 
 msgid "language_changed_reopen"
 msgstr "Langue modifiée. Rouvrez le menu pour voir les changements."
+
+msgid "later"
+msgstr "Later"
 
 msgid "linked_entries"
 msgstr "Linked Entries"
@@ -416,6 +425,9 @@ msgstr "Récupérer plus de personnages"
 msgid "menu_fetch_more_terms"
 msgstr "Fetch More Terms"
 
+msgid "menu_fetch_series_context"
+msgstr "Fetch / Refresh Series Context"
+
 msgid "menu_historical_figures"
 msgstr "Figures Historiques"
 
@@ -442,6 +454,9 @@ msgstr "AI Reasoning Effort"
 
 msgid "menu_secondary_ai_model"
 msgstr "Modèle IA secondaire"
+
+msgid "menu_series_context"
+msgstr "Series Context"
 
 msgid "menu_settings"
 msgstr "Paramètres"
@@ -586,6 +601,33 @@ msgstr "Entrez le nom du personnage"
 
 msgid "search_term"
 msgstr "Search Terms"
+
+msgid "series_ask_later_msg"
+msgstr "Series recap postponed. We will ask again when you open/resume this book."
+
+msgid "series_context_enabled_toggle"
+msgstr "Enable Series Context"
+
+msgid "series_context_loaded"
+msgstr "Series context loaded (%d prior books)."
+
+msgid "series_context_prompt_text"
+msgstr "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)"
+
+msgid "series_context_prompt_title"
+msgstr "Series Detected"
+
+msgid "series_disabled_msg"
+msgstr "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
+
+msgid "series_no_prior_detected"
+msgstr "No prior books detected for this series."
+
+msgid "series_prior_books_header"
+msgstr "── Prior Books ──"
+
+msgid "series_prior_label"
+msgstr "[Prior]"
 
 msgid "spoiler_free_about"
 msgstr "Le mode sans spoiler limite l'extraction de l'IA aux pages que vous avez déjà lues (jusqu'à votre page actuelle), évitant ainsi les spoilers des chapitres futurs.\n\nLe mode Livre Complet analyse l'ensemble du livre, ce qui peut contenir des spoilers."

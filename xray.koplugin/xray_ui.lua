@@ -320,6 +320,9 @@ function M:showCharacters()
     table.insert(items, { text = "✚ " .. (self.loc:t("menu_fetch_more_chars") or "Fetch More Characters"), keep_menu_open = true, callback = function() self:fetchMoreCharacters() end, separator = #self.characters > 0 })
     for _, char in ipairs(self.characters) do
         local name = char.name or "Unknown"
+        if char.source == "series_prior" then
+            name = name .. " " .. (self.loc:t("series_prior_label") or "[Prior]")
+        end
         local text = "• " .. name
         -- Aliases are no longer listed in the main character list to reduce clutter,
         -- as they are still visible in the individual character infobox.
@@ -759,8 +762,12 @@ function M:showTerms()
     for _, term in ipairs(self.terms) do 
         if type(term) == "table" then
             local captured_term = term
+            local name = term.name or "???"
+            if term.source == "series_prior" then
+                name = name .. " " .. (self.loc:t("series_prior_label") or "[Prior]")
+            end
             table.insert(items, {
-                text = "• " .. (term.name or "???"),
+                text = "• " .. name,
                 subtext = term.definition and term.definition:sub(1, 80) .. "...",
                 keep_menu_open = true,
                 callback = function()
@@ -854,8 +861,7 @@ function M:showBookTypeSettings()
         end
 
         info_dialog = ButtonDialog:new{
-            title = self.loc:t("menu_book_mode") or "Book Type",
-            text = self.loc:t("book_mode_desc") or "Select the type for this book:",
+            title = (self.loc:t("menu_book_mode") or "Book Type") .. "\n\n" .. (self.loc:t("book_mode_desc") or "Select the type for this book:"),
             buttons = {
                 {
                     { 
@@ -1190,8 +1196,7 @@ function M:showAutoUpdateSettings()
         local current_cooldown = self.ai_helper.settings and self.ai_helper.settings.auto_fetch_cooldown or 300
         
         info_dialog = ButtonDialog:new{
-            title = self.loc:t("menu_auto_update_frequency") or "Auto X-Ray Settings",
-            text = self.loc:t("auto_update_freq_label") or "Background fetching frequency:",
+            title = (self.loc:t("menu_auto_update_frequency") or "Auto X-Ray Settings") .. "\n\n" .. (self.loc:t("auto_update_freq_label") or "Background fetching frequency:"),
             buttons = {
                 {
                     {
@@ -1449,7 +1454,7 @@ function M:showAuthorInfo()
     if not self.author_info or not self.author_info.description or self.author_info.description == "" or self.author_info.description == (self.loc:t("msg_no_bio") or "No biography available.") then
         local ButtonDialog = require("ui/widget/buttondialog")
         local ask_dialog
-        ask_dialog = ButtonDialog:new{ title = self.loc:t("menu_fetch_author") or "Fetch Author Info", text = self.loc:t("no_author_data_fetch"), buttons = {{{ text = self.loc:t("cancel"), callback = function() UIManager:close(ask_dialog) end }, { text = self.loc:t("fetch_button") or "Fetch", is_enter_default = true, callback = function() UIManager:close(ask_dialog); UIManager:nextTick(function() self:fetchAuthorInfo() end) end }}} }
+        ask_dialog = ButtonDialog:new{ title = (self.loc:t("menu_fetch_author") or "Fetch Author Info") .. "\n\n" .. (self.loc:t("no_author_data_fetch") or "No author biography available. Fetch now?"), buttons = {{{ text = self.loc:t("cancel"), callback = function() UIManager:close(ask_dialog) end }, { text = self.loc:t("fetch_button") or "Fetch", is_enter_default = true, callback = function() UIManager:close(ask_dialog); UIManager:nextTick(function() self:fetchAuthorInfo() end) end }}} }
         UIManager:show(ask_dialog); return
     end
     local lines = { "NAME: " .. (self.author_info.name or "Unknown"), "BORN: " .. (self.author_info.birthDate or "---"), "DIED: " .. (self.author_info.deathDate or "---"), "", "BIOGRAPHY:", (self.author_info.description or "No biography available.") }
@@ -1467,8 +1472,12 @@ function M:showLocations()
     for _, loc in ipairs(self.locations) do 
         if type(loc) == "table" then
             local captured_loc = loc
+            local name = loc.name or "???"
+            if loc.source == "series_prior" then
+                name = name .. " " .. (self.loc:t("series_prior_label") or "[Prior]")
+            end
             table.insert(items, {
-                text = loc.name or "???",
+                text = name,
                 keep_menu_open = true,
                 callback = function()
                     self:showLocationDetails(captured_loc)
@@ -1588,16 +1597,72 @@ function M:showTimeline()
     local toc = self.ui.document:getToc()
     self:assignTimelinePages(self.timeline, toc, true)
     self:sortTimelineByTOC(self.timeline)
-    local items = {}
+    
+    local has_prior = false
     for _, ev in ipairs(self.timeline) do
+        if ev.source == "series_prior" then
+            has_prior = true
+            break
+        end
+    end
+
+    if self.series_prior_timeline_collapsed == nil then
+        self.series_prior_timeline_collapsed = true
+    end
+
+    local items = {}
+    if has_prior then
+        local arrow = self.series_prior_timeline_collapsed and "► " or "▼ "
+        local header_text = arrow .. (self.loc:t("series_prior_books_header") or "── Prior Books ──")
         table.insert(items, {
-            text = (ev.chapter or "") .. ": " .. (ev.event or ""),
+            text = header_text,
             keep_menu_open = true,
             callback = function()
-                UIManager:show(InfoMessage:new{ text = (ev.event or ""), timeout = 10 })
+                self.series_prior_timeline_collapsed = not self.series_prior_timeline_collapsed
+                self:showTimeline()
             end
         })
     end
+
+    for _, ev in ipairs(self.timeline) do
+        if ev.source == "series_prior" then
+            if not self.series_prior_timeline_collapsed then
+                table.insert(items, {
+                    text = ev.chapter or "",
+                    keep_menu_open = true,
+                    callback = function()
+                        local TextViewer = require("ui/widget/textviewer")
+                        local text_viewer = TextViewer:new{
+                            title = ev.chapter or "Prior Book Summary",
+                            text = ev.event or "",
+                            text_type = "book_info",
+                        }
+                        UIManager:show(text_viewer)
+                    end
+                })
+            end
+        else
+            table.insert(items, {
+                text = (ev.chapter or "") .. ": " .. (ev.event or ""),
+                keep_menu_open = true,
+                callback = function()
+                    local TextViewer = require("ui/widget/textviewer")
+                    local text_viewer = TextViewer:new{
+                        title = ev.chapter or "Event Summary",
+                        text = ev.event or "",
+                        text_type = "book_info",
+                    }
+                    UIManager:show(text_viewer)
+                end
+            })
+        end
+    end
+
+    if self.timeline_menu then
+        UIManager:close(self.timeline_menu)
+        self.timeline_menu = nil
+    end
+
     self.timeline_menu = Menu:new{ 
         title = self.loc:t("menu_timeline"), 
         item_table = items, 
@@ -2294,6 +2359,167 @@ function M:checkWeeklyUpdate()
             self:log("XRayPlugin: Skipping weekly update check (offline)")
         end
     end
+end
+
+function M:toggleSeriesContextEnabled()
+    if not self.ai_helper or not self.ai_helper.settings then return end
+    local current = not not self.ai_helper.settings.series_context_enabled
+    self.ai_helper.settings.series_context_enabled = not current
+    self.ai_helper:saveSettings({ series_context_enabled = not current })
+    UIManager:setDirty(nil, "ui")
+end
+
+function M:manualFetchSeriesContext()
+    local ButtonDialog = require("ui/widget/buttondialog")
+    local cancel_ref = { cancelled = false }
+    local wait_dialog
+    wait_dialog = ButtonDialog:new{
+        title = self.loc:t("fetching_series_info") or "Identifying series books…",
+        buttons = {{{
+            text = self.loc:t("cancel") or "Cancel",
+            callback = function()
+                cancel_ref.cancelled = true
+                self:log("XRayPlugin: Series: User cancelled series fetch before launch.")
+                UIManager:close(wait_dialog)
+            end
+        }}}
+    }
+    UIManager:show(wait_dialog)
+    UIManager:nextTick(function()
+        if cancel_ref.cancelled then
+            self:log("XRayPlugin: Series: nextTick fired after user already cancelled fetch.")
+            return
+        end
+        self:fetchSeriesContext(false, wait_dialog, cancel_ref)
+    end)
+end
+
+function M:checkSeriesContext()
+    self:log("XRayPlugin: Series: checkSeriesContext starting")
+    if not self.ui or not self.ui.document then
+        self:log("XRayPlugin: Series: checkSeriesContext: document/ui not available, skipping")
+        return
+    end
+
+    if not self.ai_helper or not self.ai_helper.settings or not self.ai_helper.settings.series_context_enabled then
+        self:log("XRayPlugin: Series: checkSeriesContext: series_context_enabled setting is false/nil, skipping")
+        return
+    end
+
+    if self.book_data and (self.book_data.series_context_loaded or self.book_data.series_context_dismissed) then
+        self:log("XRayPlugin: Series: checkSeriesContext: series context is already loaded or dismissed, skipping")
+        return
+    end
+
+    local NetworkMgr = require("ui/network/manager")
+    if not NetworkMgr:isOnline() then
+        self:log("XRayPlugin: Series: checkSeriesContext: device is offline. Scheduling check when online.")
+        NetworkMgr:runWhenOnline(function()
+            self:log("XRayPlugin: Series: checkSeriesContext: Network is online now. Triggering check in 5 seconds.")
+            UIManager:scheduleIn(5, function()
+                self:checkSeriesContext()
+            end)
+        end)
+        return
+    end
+
+    local props = self.ui.document:getProps() or {}
+    local function sanitizeMetadata(val)
+        if type(val) == "string" then return val
+        elseif type(val) == "table" then return table.concat(val, ", ")
+        else return "Unknown" end
+    end
+    local title = sanitizeMetadata(props.title)
+    local author = sanitizeMetadata(props.authors)
+
+    self:log("XRayPlugin: Series: checkSeriesContext: checking book title=" .. tostring(title) .. ", author=" .. tostring(author))
+
+    local series_info = self.series_manager:detectSeries(props, title, author, self.ai_helper)
+    if not series_info or not series_info.name or not series_info.index or series_info.index <= 1 then
+        self:log("XRayPlugin: Series: checkSeriesContext: No series detected or index is <= 1, skipping")
+        return
+    end
+
+    self:log("XRayPlugin: Series: checkSeriesContext: Series detected: " .. series_info.name .. ", index=" .. tostring(series_info.index) .. ". Showing prompt dialog.")
+
+    local body_text = string.format(
+        self.loc:t("series_context_prompt_text") or "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)",
+        series_info.index,
+        series_info.name,
+        series_info.index - 1
+    )
+
+    local confirm
+    confirm = ButtonDialog:new{
+        title = (self.loc:t("series_context_prompt_title") or "Series Detected") .. "\n\n" .. body_text,
+        buttons = {
+            {
+                {
+                    text = self.loc:t("yes") or "Yes",
+                    is_enter_default = true,
+                    callback = function()
+                        self:log("XRayPlugin: Series: User chose YES on series context prompt.")
+                        UIManager:close(confirm)
+                        
+                        local cancel_ref = { cancelled = false }
+                        local wait_dialog
+                        wait_dialog = ButtonDialog:new{
+                            title = self.loc:t("fetching_series_info") or "Identifying series books…",
+                            buttons = {{{
+                                text = self.loc:t("cancel") or "Cancel",
+                                callback = function()
+                                    cancel_ref.cancelled = true
+                                    self:log("XRayPlugin: Series: User cancelled series fetch before launch.")
+                                    UIManager:close(wait_dialog)
+                                end
+                            }}}
+                        }
+                        UIManager:show(wait_dialog)
+                        
+                        UIManager:nextTick(function()
+                            if cancel_ref.cancelled then
+                                self:log("XRayPlugin: Series: nextTick fired after user already cancelled fetch.")
+                                return
+                            end
+                            self:fetchSeriesContext(false, wait_dialog, cancel_ref)
+                        end)
+                    end,
+                },
+                {
+                    text = self.loc:t("later") or "Later",
+                    callback = function()
+                        self:log("XRayPlugin: Series: User chose LATER on series context prompt.")
+                        UIManager:close(confirm)
+                        local ask_later_msg = self.loc:t("series_ask_later_msg") or "Series recap postponed. We will ask again when you open/resume this book."
+                        UIManager:show(InfoMessage:new{
+                            text = ask_later_msg,
+                            timeout = 5
+                        })
+                    end,
+                },
+                {
+                    text = self.loc:t("dont_ask_again") or "Don't ask again",
+                    callback = function()
+                        self:log("XRayPlugin: Series: User chose DONT_ASK_AGAIN on series context prompt.")
+                        UIManager:close(confirm)
+                        if not self.cache_manager then
+                            self.cache_manager = require(plugin_path .. "xray_cachemanager"):new()
+                        end
+                        local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+                        cache.series_context_dismissed = true
+                        self.cache_manager:saveCache(self.ui.document.file, cache)
+                        self.book_data = cache
+                        local disabled_msg = self.loc:t("series_disabled_msg") or "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
+                        UIManager:show(InfoMessage:new{
+                            text = disabled_msg,
+                            timeout = 5
+                        })
+                    end,
+                }
+            }
+        }
+    }
+    UIManager:show(confirm)
 end
 
 return M

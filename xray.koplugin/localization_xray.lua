@@ -350,6 +350,20 @@ function Localization:t(key, ...)
             menu_fetch_more_terms = "Fetch More Terms",
             model_free = "free",
             model_paid = "paid",
+            menu_series_context = "Series Context",
+            series_context_enabled_toggle = "Enable Series Context",
+            series_context_prompt_title = "Series Detected",
+            series_context_prompt_text = "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)",
+            fetching_series_context = "Fetching series context: Book %d of %d…",
+            series_context_loaded = "Series context loaded (%d prior books).",
+            series_prior_label = "[Prior]",
+            series_prior_books_header = "── Prior Books ──",
+            series_no_prior_detected = "No prior books detected for this series.",
+            menu_fetch_series_context = "Fetch / Refresh Series Context",
+            later = "Later",
+            dont_ask_again = "Don't ask again",
+            series_ask_later_msg = "Series recap postponed. We will ask again when you open/resume this book.",
+            series_disabled_msg = "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu.",
         }
         translation = fallbacks[key] or key
     end

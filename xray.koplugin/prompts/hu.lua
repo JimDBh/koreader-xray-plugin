@@ -182,6 +182,59 @@ ELVÁRT JSON FORMÁTUM:
   "merged_description": "Összevont és csiszolt leírás (Max {MAX_CHAR_DESC} karakter)"
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Könyv címe: %s
+Szerző: %s
+
+FELADAT: Határozza meg, hogy ez a könyv egy nevezett sorozat része-e.
+Kizárólag érvényes JSON-t adjon vissza:
+{
+  "is_series": true,
+  "series_name": "Az Idő Kereke",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Ha ez NEM sorozatkönyv, adjon vissza:
+{ "is_series": false }]],
+
+    prior_book_list = [[Sorozat: %s
+Jelenlegi könyv indexe: %d
+
+FELADAT: Listázza az 1. és %d. közötti könyvek címeit (és szerzőit, ha különböznek ettől: "%s"),
+amelyek a sorozat jelenlegi könyve ELŐTT jelentek meg.
+Kizárólag érvényes JSON-t adjon vissza:
+{
+  "prior_books": [
+    { "index": 1, "title": "A Világ Szeme", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Könyv: %s
+Szerző: %s
+Ez a(z) %d. könyv a(z) "%s" sorozatban.
+
+FELADAT: Adjon TELJES összefoglalót a teljes könyvről egy olyan olvasó számára,
+aki ÉPPEN MOST FOGJA ELKEZDENI a sorozat KÖVETKEZŐ könyvét.
+Tartalmazza: kulcsszereplők (név, szerep, végső állapot a könyv végén), főbb helyszínek,
+kritikus cselekmény események és bemutatott fontos világépítő kifejezések.
+NINCS SPOILER a könyvön TÚLI részekről.
+
+ELVÁRT JSON FORMÁTUM:
+{
+  "characters": [
+    { "name": "Teljes név", "aliases": [], "role": "...", "description": "Állapot a könyv végén (max 300 karakter)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Könyv összefoglaló", "event": "Egyetlen, rendkívül részletes, átfogó, több bekezdésből álló összefoglaló a teljes könyv cselekményéről, főbb eseményeiről és végkifejletéről (max 2000 karakter) You MUST format this recap using multiple distinct paragraphs separated by double newlines (\\n\\n) for readability instead of a single wall of text." }
+  ]
+}]],
+
     -- Fallback strings
     fallback = {
         unknown_book = "Ismeretlen könyv",

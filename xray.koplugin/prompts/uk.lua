@@ -170,6 +170,59 @@ CRITICAL FOR HISTORICAL FIGURES: You MAY use your internal knowledge to verify t
   "error_message": "Коротке пояснення, чому це не персонаж і не локація."
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Назва книги: %s
+Автор: %s
+
+ЗАВДАННЯ: Визначте, чи є ця книга частиною названої серії.
+Поверніть ТІЛЬКИ правильний JSON:
+{
+  "is_series": true,
+  "series_name": "Колесо Часу",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Якщо це НЕ книга серії, поверніть:
+{ "is_series": false }]],
+
+    prior_book_list = [[Серія: %s
+Індекс поточної книги: %d
+
+ЗАВДАННЯ: Перелічіть назви (та авторів, якщо вони відрізняються від "%s") книг з 1 по %d,
+які йдуть ПЕРЕД поточною книгою у цій серії.
+Поверніть ТІЛЬКИ правильний JSON:
+{
+  "prior_books": [
+    { "index": 1, "title": "Око Світу", "author": "Роберт Джордан" }
+  ]
+}]],
+
+    series_book_summary = [[Книга: %s
+Автор: %s
+Це книга %d у серії "%s".
+
+ЗАВДАННЯ: Надайте ПОВНИЙ переказ всієї цієї книги для читача,
+який збирається РОЗПОЧАТИ НАСТУПНУ книгу в серії.
+Включіть: ключових персонажів (ім'я, роль, статус наприкінці книги), основні локації,
+важливі сюжетні події та важливі терміни лору (побудови світу).
+БЕЗ СПОЙЛЕРІВ до наступних книг.
+
+ОБОВ'ЯЗКОВИЙ ФОРМАТ JSON:
+{
+  "characters": [
+    { "name": "Повне ім'я", "aliases": [], "role": "...", "description": "Статус наприкінці цієї книги (макс. 300 символів)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Стислий зміст книги", "event": "Єдиний, дуже детальний, всеосяжний переказ сюжету всієї книги у кількох абзацах, включаючи основні події та фінал (макс. 2000 символів) You MUST format this recap using multiple distinct paragraphs separated by double newlines (\\n\\n) for readability instead of a single wall of text." }
+  ]
+}]],
+
     -- Fallback strings
     fallback = {
         unknown_book = "Невідома книга",

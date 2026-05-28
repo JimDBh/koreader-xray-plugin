@@ -221,6 +221,59 @@ If `is_valid` is false:
   "error_message": "Breve explicación de por qué esto no es un personaje ni un lugar."
 }]],
 
+    -- Multi-Book Series Context Prompts
+    series_detect = [[Título del libro: %s
+Autor: %s
+
+TAREA: Determine si este libro es parte de una serie nombrada.
+Devuelva SOLAMENTE JSON válido:
+{
+  "is_series": true,
+  "series_name": "La Rueda del Tiempo",
+  "book_index": 3,
+  "total_books_known": 14
+}
+Si este NO es un libro de serie, devuelva:
+{ "is_series": false }]],
+
+    prior_book_list = [[Serie: %s
+Índice del libro actual: %d
+
+TAREA: Enumere los títulos (y autores si son diferentes de "%s") de los libros del 1 al %d
+que vienen ANTES del libro actual en esta serie.
+Devuelva SOLAMENTE JSON válido:
+{
+  "prior_books": [
+    { "index": 1, "title": "El Ojo del Mundo", "author": "Robert Jordan" }
+  ]
+}]],
+
+    series_book_summary = [[Libro: %s
+Autor: %s
+Este es el libro %d de la serie "%s".
+
+TAREA: Proporcione un resumen COMPLETO de todo este libro para un lector
+que está A PUNTO DE COMENZAR el SIGUIENTE libro de la serie.
+Incluya: personajes clave (nombre, función, estado final al final del libro), ubicaciones principales,
+eventos críticos de la trama y términos importantes de construcción del mundo presentados.
+SIN SPOILERS para libros MÁS ALLÁ de este.
+
+FORMATO JSON REQUERIDO:
+{
+  "characters": [
+    { "name": "Nombre completo", "aliases": [], "role": "...", "description": "Estado al final de este libro (máx. 300 caracteres)" }
+  ],
+  "locations": [
+    { "name": "...", "description": "..." }
+  ],
+  "terms": [
+    { "name": "...", "aliases": ["Alias 1", "Alias 2"], "expanded": "...", "category": "...", "definition": "..." }
+  ],
+  "timeline": [
+    { "chapter": "Resumen del libro", "event": "Un resumen único, muy detallado y completo de la trama, los eventos principales y la resolución de todo el libro (máx. 2000 caracteres). DEBE formatear este resumen usando múltiples párrafos distintos separados por dos saltos de línea (\\n\\n) para mayor legibilidad en lugar de un único bloque de texto. You MUST format this recap using multiple distinct paragraphs separated by double newlines (\\n\\n) for readability instead of a single wall of text." }
+  ]
+}]],
+
     -- Cadenas de respaldo
     fallback = {
         unknown_book = "Libro desconocido",

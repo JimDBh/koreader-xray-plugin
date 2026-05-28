@@ -141,6 +141,10 @@ function XRayPlugin:init()
     -- Modular lookup logic for text selection
     local LookupManager = require(plugin_path .. "xray_lookupmanager")
     self.lookup_manager = LookupManager:new(self)
+
+    -- Standalone Series Manager
+    local SeriesManager = require(plugin_path .. "xray_seriesmanager")
+    self.series_manager = SeriesManager:new()
     
     self:log("XRayPlugin: Initialized with language: " .. self.loc:getLanguage())
     self:onDispatcherRegisterActions()
@@ -298,6 +302,11 @@ function XRayPlugin:onReaderReady()
         self:checkWeeklyUpdate()
     end)
 
+    -- Check series context prompt after ~15 seconds
+    UIManager:scheduleIn(15, function()
+        self:checkSeriesContext()
+    end)
+
     -- Enforce X-Ray as the first item in the Tools menu for all KOReader versions
     UIManager:scheduleIn(1, function()
         local order_module
@@ -314,8 +323,13 @@ function XRayPlugin:onReaderReady()
             order_module.insertSorted("tools", "xray", 1)
         end
     end)
+end
 
-
+function XRayPlugin:onResume()
+    self:log("XRayPlugin: onResume called. Scheduling series context check in 5 seconds.")
+    UIManager:scheduleIn(5, function()
+        self:checkSeriesContext()
+    end)
 end
 
 function XRayPlugin:onPageUpdate(pageno)
@@ -684,6 +698,22 @@ function XRayPlugin:getSubMenuItems()
                 text = self.loc:t("spoiler_preference_title") or "Spoiler Settings",
                 keep_menu_open = true,
                 callback = function() self:showSpoilerSettings() end,
+            },
+            {
+                text = self.loc:t("menu_series_context") or "Series Context",
+                keep_menu_open = true,
+                sub_item_table = {
+                    {
+                        text = self.loc:t("series_context_enabled_toggle") or "Enable Series Context",
+                        checked_func = function() return self.ai_helper.settings.series_context_enabled end,
+                        callback = function() self:toggleSeriesContextEnabled() end,
+                    },
+                    {
+                        text = self.loc:t("menu_fetch_series_context") or "Fetch / Refresh Series Context",
+                        keep_menu_open = true,
+                        callback = function() self:manualFetchSeriesContext() end,
+                    }
+                }
             },
             {
                 text = self.loc:t("menu_xray_mode"),

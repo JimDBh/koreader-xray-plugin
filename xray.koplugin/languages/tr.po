@@ -257,6 +257,12 @@ msgstr "X-Ray verilerini oluşturmak için kitap analiz ediliyor..."
 msgid "fetching_author"
 msgstr "Yazar bilgisi %s üzerinden çekiliyor..."
 
+msgid "fetching_series_context"
+msgstr "Fetching series context: Book %d of %d…"
+
+msgid "fetching_series_info"
+msgstr "Seri kitapları tanımlanıyor..."
+
 msgid "fetching_wait"
 msgstr "⏳ Lütfen bekleyin...\nBu işlem 10-50 saniye sürebilir."
 
@@ -307,6 +313,9 @@ msgstr "Dil Uyumsuzluğu"
 
 msgid "language_changed_reopen"
 msgstr "Dil değiştirildi. Değişiklikleri görmek için menüyü tekrar açın."
+
+msgid "later"
+msgstr "Later"
 
 msgid "linked_entries"
 msgstr "Linked Entries"
@@ -416,6 +425,9 @@ msgstr "Daha Fazla Karakter Getir"
 msgid "menu_fetch_more_terms"
 msgstr "Fetch More Terms"
 
+msgid "menu_fetch_series_context"
+msgstr "Fetch / Refresh Series Context"
+
 msgid "menu_historical_figures"
 msgstr "Tarihi Kişiler"
 
@@ -442,6 +454,9 @@ msgstr "AI Reasoning Effort"
 
 msgid "menu_secondary_ai_model"
 msgstr "İkincil YZ Modeli"
+
+msgid "menu_series_context"
+msgstr "Series Context"
 
 msgid "menu_settings"
 msgstr "Ayarlar"
@@ -586,6 +601,33 @@ msgstr "İsim yazın (örn. Stavrogin)"
 
 msgid "search_term"
 msgstr "Search Terms"
+
+msgid "series_ask_later_msg"
+msgstr "Series recap postponed. We will ask again when you open/resume this book."
+
+msgid "series_context_enabled_toggle"
+msgstr "Enable Series Context"
+
+msgid "series_context_loaded"
+msgstr "Series context loaded (%d prior books)."
+
+msgid "series_context_prompt_text"
+msgstr "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)"
+
+msgid "series_context_prompt_title"
+msgstr "Series Detected"
+
+msgid "series_disabled_msg"
+msgstr "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
+
+msgid "series_no_prior_detected"
+msgstr "No prior books detected for this series."
+
+msgid "series_prior_books_header"
+msgstr "── Prior Books ──"
+
+msgid "series_prior_label"
+msgstr "[Prior]"
 
 msgid "spoiler_free_about"
 msgstr "Spoilersiz mod, AI çıkarımını zaten okuduğunuz sayfalarla (mevcut sayfanıza kadar) sınırlayarak gelecek bölümlerden spoiler yemenizi önler.\n\nTam Kitap Modu tüm kitabı analiz eder ve spoiler içerebilir."
