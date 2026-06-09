@@ -8,8 +8,8 @@
 This plugin brings Kindle-style X-Ray features to KOReader. It uses AI to track characters, build plot timelines, and provide insights while you read.
 
 <p align="center">
-  <img src="img/menu_main.png" width="45%" />
-  <img src="img/character_detail.png" width="45%" />
+  <img src="https://github.com/ultimatejimmy/koreader-xray-plugin/wiki/img/menu_main.png" width="45%" />
+  <img src="https://github.com/ultimatejimmy/koreader-xray-plugin/wiki/img/character_detail.png" width="45%" />
 </p>
 
 ## What it does
