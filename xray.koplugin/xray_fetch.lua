@@ -82,11 +82,8 @@ function M:fetchSingleWord(text, pos0, pos1)
             -- We use a moderate budget (60k) to balance context depth with fetch speed.
             local samples, chapter_titles = self.chapter_analyzer:getDetailedChapterSamples(self.ui, 100, 60000, limit_percent == 100)
             
-            -- 2. Immediate book text (Previous, Current, and Next page for maximum context relevance)
-            local end_page = current_page
-            if limit_percent == 100 then
-                end_page = current_page + 1
-            end
+            -- 2. Immediate book text (Previous and Current page for maximum context relevance)
+            local end_page = current_page + 1
             local book_text = self.chapter_analyzer:getTextFromPageRange(self.ui, math.max(1, current_page - 1), end_page, 25000)
             
             local context_prefix = "SEARCH TARGET: \"" .. text .. "\"\n"
@@ -143,17 +140,59 @@ function M:fetchSingleWord(text, pos0, pos1)
                 end
 
                 if target_list then
+                    -- Resolve current chapter title for history tracking
+                    local chapter_title = nil
+                    if self.ui and self.ui.document and current_page then
+                        local toc = self.ui.document:getToc()
+                        if toc then
+                            for _, entry in ipairs(toc) do
+                                if entry.page and entry.page <= current_page then
+                                    chapter_title = entry.title
+                                else
+                                    break
+                                end
+                            end
+                        end
+                    end
+
                     -- Check if already exists (case-insensitive)
                     local found = false
                     for _, existing in ipairs(target_list) do
                         if (existing.name or ""):lower() == (item.name or ""):lower() then
                             -- Update description/role
                             for k, v in pairs(item) do existing[k] = v end
+                            
+                            -- Record history for single word lookup
+                            local desc_key = item_type == "historical_figure" and "biography" or "description"
+                            if existing[desc_key] and existing[desc_key] ~= "" then
+                                existing.history = existing.history or {}
+                                local dup = false
+                                for _, entry in ipairs(existing.history) do
+                                    if entry.page == current_page then
+                                        entry[desc_key] = existing[desc_key]
+                                        entry.chapter = chapter_title or entry.chapter
+                                        dup = true; break
+                                    end
+                                end
+                                if not dup then
+                                    local hist_entry = { page = current_page, chapter = chapter_title or "" }
+                                    hist_entry[desc_key] = existing[desc_key]
+                                    table.insert(existing.history, hist_entry)
+                                end
+                            end
                             found = true
                             break
                         end
                     end
-                    if not found then table.insert(target_list, item) end
+                    if not found then
+                        local desc_key = item_type == "historical_figure" and "biography" or "description"
+                        if item[desc_key] and item[desc_key] ~= "" then
+                            local hist_entry = { page = current_page, chapter = chapter_title or "" }
+                            hist_entry[desc_key] = item[desc_key]
+                            item.history = { hist_entry }
+                        end
+                        table.insert(target_list, item)
+                    end
                     
                     -- Sort and save cache
                     self:sortDataByFrequency(target_list, book_text, "name")
@@ -169,7 +208,7 @@ function M:fetchSingleWord(text, pos0, pos1)
                     updated.author_info = self.author_info or updated.author_info
                     updated.last_fetch_page = (self.book_data and self.book_data.last_fetch_page) or updated.last_fetch_page
                     
-                    self.cache_manager:saveCache(self.ui.document.file, updated)
+                    self.cache_manager:asyncSaveCache(self.ui.document.file, updated)
                 end
                 
                 -- Always show result if it's valid, even if it didn't merge into a target_list
@@ -254,7 +293,12 @@ function M:continueWithFetch(reading_percent, is_update, last_fetch_page, is_sil
             end
         end
 
-        local book_text = self.chapter_analyzer:getTextForAnalysis(self.ui, 20000, nil, current_page, first_missing_page)
+        local end_page_analysis = current_page
+        local spoiler_setting = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.spoiler_setting or "spoiler_free"
+        if spoiler_setting ~= "full_book" then
+            end_page_analysis = current_page + 1
+        end
+        local book_text = self.chapter_analyzer:getTextForAnalysis(self.ui, 20000, nil, end_page_analysis, first_missing_page)
         local known_chapters = {}
         if is_update and self.timeline then
             for _, ev in ipairs(self.timeline) do
@@ -432,6 +476,21 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
         return  -- do NOT touch self.characters / self.locations / cache
     end
 
+    -- Resolve current chapter title for history tracking
+    local chapter_title = nil
+    if self.ui and self.ui.document and current_page then
+        local toc = self.ui.document:getToc()
+        if toc then
+            for _, entry in ipairs(toc) do
+                if entry.page and entry.page <= current_page then
+                    chapter_title = entry.title
+                else
+                    break
+                end
+            end
+        end
+    end
+
     if is_update then
         -- Ensure tables exist before attempting to merge/insert
         self.characters = self.characters or {}
@@ -448,12 +507,42 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
                     -- Replace existing description with the AI's rewritten cohesive summary
                     if new_char.description and new_char.description ~= "" then
                         existing_char.description = new_char.description
+                        
+                        -- Record history
+                        existing_char.history = existing_char.history or {}
+                        local dup = false
+                        for _, entry in ipairs(existing_char.history) do
+                            if entry.page == current_page then
+                                entry.description = new_char.description
+                                entry.chapter = chapter_title or entry.chapter
+                                dup = true
+                                break
+                            end
+                        end
+                        if not dup then
+                            table.insert(existing_char.history, {
+                                page = current_page,
+                                chapter = chapter_title or "",
+                                description = new_char.description
+                            })
+                        end
                     end
                     found = true
                     break
                 end
             end
-            if not found then table.insert(self.characters, new_char) end
+            if not found then
+                if new_char.description and new_char.description ~= "" then
+                    new_char.history = {
+                        {
+                            page = current_page,
+                            chapter = chapter_title or "",
+                            description = new_char.description
+                        }
+                    }
+                end
+                table.insert(self.characters, new_char)
+            end
         end
         -- Dedup then re-sort the entire character list by frequency in the current context
         self.characters = self:deduplicateByName(self.characters, "name")
@@ -467,13 +556,43 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
                 if existing_fig.name:lower() == new_fig.name:lower() then
                     if new_fig.biography and new_fig.biography ~= "" then
                         existing_fig.biography = new_fig.biography
+                        
+                        -- Record history
+                        existing_fig.history = existing_fig.history or {}
+                        local dup = false
+                        for _, entry in ipairs(existing_fig.history) do
+                            if entry.page == current_page then
+                                entry.biography = new_fig.biography
+                                entry.chapter = chapter_title or entry.chapter
+                                dup = true
+                                break
+                            end
+                        end
+                        if not dup then
+                            table.insert(existing_fig.history, {
+                                page = current_page,
+                                chapter = chapter_title or "",
+                                biography = new_fig.biography
+                            })
+                        end
                     end
                     existing_fig.role = new_fig.role
                     found = true
                     break
                 end
             end
-            if not found then table.insert(self.historical_figures, new_fig) end
+            if not found then
+                if new_fig.biography and new_fig.biography ~= "" then
+                    new_fig.history = {
+                        {
+                            page = current_page,
+                            chapter = chapter_title or "",
+                            biography = new_fig.biography
+                        }
+                    }
+                end
+                table.insert(self.historical_figures, new_fig)
+            end
         end
         self.historical_figures = self:deduplicateByName(self.historical_figures, "name")
         -- Merge locations
@@ -483,12 +602,42 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
                 if existing_loc.name:lower() == new_loc.name:lower() then
                     if new_loc.description and new_loc.description ~= "" then
                         existing_loc.description = new_loc.description
+                        
+                        -- Record history
+                        existing_loc.history = existing_loc.history or {}
+                        local dup = false
+                        for _, entry in ipairs(existing_loc.history) do
+                            if entry.page == current_page then
+                                entry.description = new_loc.description
+                                entry.chapter = chapter_title or entry.chapter
+                                dup = true
+                                break
+                            end
+                        end
+                        if not dup then
+                            table.insert(existing_loc.history, {
+                                page = current_page,
+                                chapter = chapter_title or "",
+                                description = new_loc.description
+                            })
+                        end
                     end
                     found = true
                     break
                 end
             end
-            if not found then table.insert(self.locations, new_loc) end
+            if not found then
+                if new_loc.description and new_loc.description ~= "" then
+                    new_loc.history = {
+                        {
+                            page = current_page,
+                            chapter = chapter_title or "",
+                            description = new_loc.description
+                        }
+                    }
+                end
+                table.insert(self.locations, new_loc)
+            end
         end
         self.locations = self:deduplicateByName(self.locations, "name")
         -- Merge terms
@@ -539,8 +688,41 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
         self:sortTimelineByTOC(self.timeline)
     else
         self.characters = final_book_data.characters
+        for _, char in ipairs(self.characters or {}) do
+            if char.description and char.description ~= "" then
+                char.history = char.history or {
+                    {
+                        page = current_page,
+                        chapter = chapter_title or "",
+                        description = char.description
+                    }
+                }
+            end
+        end
         self.historical_figures = final_book_data.historical_figures
+        for _, fig in ipairs(self.historical_figures or {}) do
+            if fig.biography and fig.biography ~= "" then
+                fig.history = fig.history or {
+                    {
+                        page = current_page,
+                        chapter = chapter_title or "",
+                        biography = fig.biography
+                    }
+                }
+            end
+        end
         self.locations = final_book_data.locations
+        for _, loc in ipairs(self.locations or {}) do
+            if loc.description and loc.description ~= "" then
+                loc.history = loc.history or {
+                    {
+                        page = current_page,
+                        chapter = chapter_title or "",
+                        description = loc.description
+                    }
+                }
+            end
+        end
         self.terms = final_book_data.terms or {}
         self.book_type = final_book_data.book_type
         self.timeline = final_book_data.timeline
@@ -574,7 +756,7 @@ function M:finalizeXRayData(final_book_data, title, author, book_text, is_update
     self.book_data = updated_data
 
     if not self.cache_manager then self.cache_manager = require(plugin_path .. "xray_cachemanager"):new() end
-    local cache_saved = self.cache_manager:saveCache(self.ui.document.file, updated_data)
+    local cache_saved = self.cache_manager:asyncSaveCache(self.ui.document.file, updated_data)
 
     UIManager:scheduleIn(1, function()
         local reading_percent = 100
@@ -810,7 +992,7 @@ function M:fetchMoreCharacters()
             updated_data.timeline = self.timeline or updated_data.timeline
             updated_data.author_info = self.author_info or updated_data.author_info
             
-            self.cache_manager:saveCache(self.ui.document.file, updated_data)
+            self.cache_manager:asyncSaveCache(self.ui.document.file, updated_data)
 
             local current_page = self.ui and self.ui.getCurrentPage and self.ui:getCurrentPage() or 1
             local total_pages = self.ui and self.ui.document and self.ui.document.getPageCount and self.ui.document:getPageCount() or 1
@@ -959,7 +1141,7 @@ function M:fetchMoreTerms()
             updated_data.timeline = self.timeline or updated_data.timeline
             updated_data.author_info = self.author_info or updated_data.author_info
             
-            self.cache_manager:saveCache(self.ui.document.file, updated_data)
+            self.cache_manager:asyncSaveCache(self.ui.document.file, updated_data)
             
             local added_msg = string.format(self.loc:t("msg_added_terms") or "Added %d new terms!", new_count)
             UIManager:show(InfoMessage:new{ text = added_msg, timeout = 3 })
@@ -1039,7 +1221,7 @@ function M:fetchAuthorInfo()
             self.book_type = author_data.book_type
         end
         
-        self.cache_manager:saveCache(self.ui.document.file, cache)
+        self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
         self:showAuthorInfo()
     end)
 end
@@ -1213,7 +1395,7 @@ function M:mergeSeriesContext(cache_data, series_info)
     cache.locations = self.locations
     cache.terms = self.terms
     cache.timeline = self.timeline
-    self.cache_manager:saveCache(book_path, cache)
+    self.cache_manager:asyncSaveCache(book_path, cache)
     self.book_data = cache
 end
 

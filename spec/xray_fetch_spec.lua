@@ -11,9 +11,9 @@ describe("xray_fetch", function()
         for k, v in pairs(fetch) do
             plugin[k] = v
         end
-        -- Mock cache manager
         plugin.cache_manager = {
             saveCache = function() return true end,
+            asyncSaveCache = function() return true end,
             loadCache = function() return {} end
         }
     end)

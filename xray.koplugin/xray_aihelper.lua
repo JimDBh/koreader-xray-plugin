@@ -1098,10 +1098,39 @@ function AIHelper:createPrompt(title, author, context, section_name, targeted_wo
             local sample_text = context.book_text or ""
             for _, c in ipairs(context.existing_characters) do
                 if c.name and c.description then
-                    -- CONTEXT TRIMMING: Only send full descriptions for characters that appear in the sample
-                    -- Otherwise just send the name to allow the AI to mention them if they appear
-                    if sample_text:find(c.name) then
-                        table.insert(existing_lines, "- " .. c.name .. ": " .. c.description)
+                    -- Optimized context trimming checks (Name, aliases, first-name fallback)
+                    local found_in_sample = false
+                    local name_lower = c.name:lower()
+                    local sample_lower = sample_text:lower()
+                    if sample_lower:find(name_lower, 1, true) then
+                        found_in_sample = true
+                    else
+                        if c.aliases then
+                            for _, alias in ipairs(c.aliases) do
+                                if type(alias) == "string" and #alias > 1 and sample_lower:find(alias:lower(), 1, true) then
+                                    found_in_sample = true; break
+                                end
+                            end
+                        end
+                        if not found_in_sample then
+                            local first_name = c.name:match("^(%S+)")
+                            if first_name and #first_name > 3 and sample_lower:find(first_name:lower(), 1, true) then
+                                found_in_sample = true
+                            end
+                        end
+                    end
+
+                    if found_in_sample then
+                        -- Prompt Anchoring: Send initial + latest description if history is available
+                        local desc_str = c.description
+                        if c.history and #c.history > 1 then
+                            local initial_desc = c.history[1].description
+                            local latest_desc = c.history[#c.history].description
+                            if initial_desc and latest_desc and initial_desc ~= latest_desc then
+                                desc_str = "Initial Introduction: " .. initial_desc .. " | Latest Status: " .. latest_desc
+                            end
+                        end
+                        table.insert(existing_lines, "- " .. c.name .. ": " .. desc_str)
                     else
                         table.insert(existing_lines, "- " .. c.name)
                     end
@@ -1118,8 +1147,37 @@ function AIHelper:createPrompt(title, author, context, section_name, targeted_wo
             local sample_text = context.book_text or ""
             for _, h in ipairs(context.existing_historical_figures) do
                 if h.name and h.biography then
-                    if sample_text:find(h.name) then
-                        table.insert(existing_lines, "- " .. h.name .. ": " .. h.biography)
+                    local found_in_sample = false
+                    local name_lower = h.name:lower()
+                    local sample_lower = sample_text:lower()
+                    if sample_lower:find(name_lower, 1, true) then
+                        found_in_sample = true
+                    else
+                        if h.aliases then
+                            for _, alias in ipairs(h.aliases) do
+                                if type(alias) == "string" and #alias > 1 and sample_lower:find(alias:lower(), 1, true) then
+                                    found_in_sample = true; break
+                                end
+                            end
+                        end
+                        if not found_in_sample then
+                            local first_name = h.name:match("^(%S+)")
+                            if first_name and #first_name > 3 and sample_lower:find(first_name:lower(), 1, true) then
+                                found_in_sample = true
+                            end
+                        end
+                    end
+
+                    if found_in_sample then
+                        local bio_str = h.biography
+                        if h.history and #h.history > 1 then
+                            local initial_bio = h.history[1].biography
+                            local latest_bio = h.history[#h.history].biography
+                            if initial_bio and latest_bio and initial_bio ~= latest_bio then
+                                bio_str = "Initial Introduction: " .. initial_bio .. " | Latest Status: " .. latest_bio
+                            end
+                        end
+                        table.insert(existing_lines, "- " .. h.name .. ": " .. bio_str)
                     else
                         table.insert(existing_lines, "- " .. h.name)
                     end
@@ -1136,8 +1194,37 @@ function AIHelper:createPrompt(title, author, context, section_name, targeted_wo
             local sample_text = context.book_text or ""
             for _, l in ipairs(context.existing_locations) do
                 if l.name and l.description then
-                    if sample_text:find(l.name) then
-                        table.insert(existing_lines, "- " .. l.name .. ": " .. l.description)
+                    local found_in_sample = false
+                    local name_lower = l.name:lower()
+                    local sample_lower = sample_text:lower()
+                    if sample_lower:find(name_lower, 1, true) then
+                        found_in_sample = true
+                    else
+                        if l.aliases then
+                            for _, alias in ipairs(l.aliases) do
+                                if type(alias) == "string" and #alias > 1 and sample_lower:find(alias:lower(), 1, true) then
+                                    found_in_sample = true; break
+                                end
+                            end
+                        end
+                        if not found_in_sample then
+                            local first_name = l.name:match("^(%S+)")
+                            if first_name and #first_name > 3 and sample_lower:find(first_name:lower(), 1, true) then
+                                found_in_sample = true
+                            end
+                        end
+                    end
+
+                    if found_in_sample then
+                        local desc_str = l.description
+                        if l.history and #l.history > 1 then
+                            local initial_desc = l.history[1].description
+                            local latest_desc = l.history[#l.history].description
+                            if initial_desc and latest_desc and initial_desc ~= latest_desc then
+                                desc_str = "Initial Introduction: " .. initial_desc .. " | Latest Status: " .. latest_desc
+                            end
+                        end
+                        table.insert(existing_lines, "- " .. l.name .. ": " .. desc_str)
                     else
                         table.insert(existing_lines, "- " .. l.name)
                     end

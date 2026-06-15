@@ -177,7 +177,8 @@ describe("xray_terms", function()
                 loc = { t = function(self, s) return s end },
                 cache_manager = {
                     loadCache = function() return {} end,
-                    saveCache = function() return true end
+                    saveCache = function() return true end,
+                    asyncSaveCache = function() return true end
                 },
                 deduplicateByName = function(self, data, key) return data end,
                 sortDataByFrequency = function(self, data, text, key) return data end,
@@ -238,7 +239,8 @@ describe("xray_terms", function()
                 loc = { t = function(self, s) return s end },
                 cache_manager = {
                     loadCache = function() return { terms = { { name = "Jedi", definition = "Force users" } } } end,
-                    saveCache = function() return true end
+                    saveCache = function() return true end,
+                    asyncSaveCache = function() return true end
                 },
                 deduplicateByName = function(self, data, key) return data end,
                 sortDataByFrequency = function(self, data, text, key) return data end,

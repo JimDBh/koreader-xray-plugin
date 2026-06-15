@@ -237,7 +237,7 @@ function M:checkBookLanguageMatch()
                     callback = function()
                         local current_cache = self.cache_manager:loadCache(self.ui.document.file) or {}
                         current_cache.ignore_lang_mismatch = true
-                        self.cache_manager:saveCache(self.ui.document.file, current_cache)
+                        self.cache_manager:asyncSaveCache(self.ui.document.file, current_cache)
                         UIManager:close(mismatch_dialog)
                     end
                 }
@@ -330,7 +330,8 @@ function M:showCharacters()
         local text = "• " .. name
         -- Aliases are no longer listed in the main character list to reduce clutter,
         -- as they are still visible in the individual character infobox.
-        if char.description and #char.description > 0 then text = text .. "\n  " .. char.description:sub(1, 80) .. (#char.description > 80 and "..." or "") end
+        local char_desc = self:resolveDescriptionForPage(char)
+        if char_desc and #char_desc > 0 and char_desc ~= "---" then text = text .. "\n  " .. char_desc:sub(1, 80) .. (#char_desc > 80 and "..." or "") end
         table.insert(items, { 
             text = text, 
             keep_menu_open = true,
@@ -550,11 +551,12 @@ function M:showCharacterDetails(character)
     end
     table.insert(lines, "")
     table.insert(lines, (self.loc:t("label_description") or "DESCRIPTION") .. ":")
-    table.insert(lines, character.description or "---")
+    local resolved_desc = self:resolveDescriptionForPage(character)
+    table.insert(lines, resolved_desc)
     local body_text = table.concat(lines, "\n")
     
     local linked_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.linked_entries_enabled ~= false
-    local related = linked_enabled and self:findRelatedEntities(character.description or "", character.name) or {}
+    local related = linked_enabled and self:findRelatedEntities(resolved_desc or "", character.name) or {}
     local mentions_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.mentions_enabled ~= false
     
     if #related > 0 then
@@ -623,7 +625,8 @@ end
 
 function M:showLocationDetails(loc_item)
     local name = loc_item.name or "???"
-    local desc = loc_item.description or ""
+    local desc = self:resolveDescriptionForPage(loc_item)
+    if desc == "---" then desc = "" end
     local body_text = name .. "\n\n" .. desc
     local linked_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.linked_entries_enabled ~= false
     local related = linked_enabled and self:findRelatedEntities(desc, name) or {}
@@ -929,7 +932,7 @@ function M:showBookTypeSettings()
         local function setType(mode)
             local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
             cache.book_mode_override = mode
-            self.cache_manager:saveCache(self.ui.document.file, cache)
+            self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
             self.book_type = (mode == "auto") and nil or mode
             UIManager:show(InfoMessage:new{ text = self.loc:t("book_type_saved") or "Book Type saved!", timeout = 3 })
             UIManager:setDirty(nil, "ui")
@@ -1253,7 +1256,7 @@ function M:showAIFindDuplicatesFlow(list, list_name, entity_label)
             elseif list_name == "locations" then
                 cache.locations = list
             end
-            self.cache_manager:saveCache(self.ui.document.file, cache)
+            self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
             -- Clear normalized lookup caches
             for _, it in ipairs(list) do
                 it._norm_name = nil
@@ -1397,7 +1400,7 @@ function M:showMergeFlow(list, list_name)
                                         elseif list_name == "locations" then
                                             cache.locations = list
                                         end
-                                        self.cache_manager:saveCache(self.ui.document.file, cache)
+                                        self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
                                         
                                         -- Clear normalized lookup caches so the LookupManager rebuilds them
                                         for _, it in ipairs(list) do
@@ -1990,7 +1993,8 @@ end
 
 function M:showHistoricalFigureDetails(fig)
     local name = fig.name or "???"
-    local bio = fig.biography or (self.loc:t("msg_no_bio") or "No biography available.")
+    local bio = self:resolveDescriptionForPage(fig)
+    if bio == "---" then bio = self.loc:t("msg_no_bio") or "No biography available." end
     local body_text = name .. "\n\n" .. bio
     local linked_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.linked_entries_enabled ~= false
     local related = linked_enabled and self:findRelatedEntities(bio, name) or {}
@@ -2794,7 +2798,7 @@ function M:checkSeriesContext()
                         end
                         local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
                         cache.series_context_dismissed = true
-                        self.cache_manager:saveCache(self.ui.document.file, cache)
+                        self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
                         self.book_data = cache
                         local disabled_msg = self.loc:t("series_disabled_msg") or "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
                         UIManager:show(InfoMessage:new{
@@ -2807,6 +2811,40 @@ function M:checkSeriesContext()
         }
     }
     UIManager:show(confirm)
+end
+
+function M:resolveDescriptionForPage(entity, current_page)
+    if not entity then return "---" end
+    local desc_key = entity.biography and "biography" or "description"
+    
+    -- If there's no history table, return the default description/biography
+    if not entity.history or #entity.history == 0 then
+        return entity[desc_key] or "---"
+    end
+    
+    -- Default current_page fallback
+    current_page = current_page or self.last_pageno or (self.ui and self.ui:getCurrentPage()) or 999999
+    
+    -- Traverse history and find the latest entry where entry.page <= current_page
+    local best_entry = nil
+    for _, entry in ipairs(entity.history) do
+        if entry.page and entry.page <= current_page then
+            if not best_entry or entry.page > best_entry.page then
+                best_entry = entry
+            end
+        end
+    end
+    
+    if best_entry then
+        return best_entry[desc_key] or "---"
+    end
+    
+    -- Fallback to the first history entry if we're somehow before any recorded history page
+    if #entity.history > 0 then
+        return entity.history[1][desc_key] or "---"
+    end
+    
+    return entity[desc_key] or "---"
 end
 
 return M

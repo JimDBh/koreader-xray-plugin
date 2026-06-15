@@ -746,7 +746,7 @@ function ChapterAnalyzer:getDetailedChapterSamples(ui, max_chapters, total_limit
 
             local success, chapter_text = pcall(function()
                 if is_current_chapter then
-                    return self:getTextFromPageRange(ui, chapter.page, current_page, total_limit)
+                    return self:getTextFromPageRange(ui, chapter.page, current_page + 1, total_limit)
                 elseif ui.document.getTextFromXPointer and chapter.xpointer then
                     -- EPUB: Usually returns the full text of the chapter file
                     return ui.document:getTextFromXPointer(chapter.xpointer)

@@ -166,10 +166,10 @@ describe("xray_chapteranalyzer", function()
             assert.are.equal(1, #getTextFromXPointer_calls)
             assert.are.equal("xp_ch1", getTextFromXPointer_calls[1])
 
-            -- Chapter 2 is the current chapter, so it should fetch using getTextFromXPointers (page 20 to 25)
+            -- Chapter 2 is the current chapter, so it should fetch using getTextFromXPointers (page 20 to 26 to include current page)
             assert.are.equal(1, #getTextFromXPointers_calls)
             assert.are.equal("xp_page_20", getTextFromXPointers_calls[1].start_xp)
-            assert.are.equal("xp_page_25", getTextFromXPointers_calls[1].end_xp)
+            assert.are.equal("xp_page_26", getTextFromXPointers_calls[1].end_xp)
         end)
 
         it("spoiler-free mode limits NO TOC fallback range to current page", function()

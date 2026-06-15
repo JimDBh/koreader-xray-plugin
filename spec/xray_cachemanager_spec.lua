@@ -38,6 +38,31 @@ describe("xray_cachemanager", function()
             assert.are.equal("6.0", loaded.cache_version)
         end)
 
+        it("saves and loads data correctly using asyncSaveCache fallback", function()
+            local data = {
+                characters = {
+                    { name = "Bob", role = "Deuteragonist" }
+                },
+                last_fetch_page = 101
+            }
+
+            local done_called = false
+            local success = cache_manager:asyncSaveCache(test_book, data, function(res)
+                done_called = true
+                assert.is_true(res)
+            end)
+            assert.is_true(success)
+            assert.is_true(done_called)
+
+            -- Allow any forked child process time to finish writing before reading
+            os.execute("sleep 0.2")
+
+            local loaded = cache_manager:loadCache(test_book)
+            assert.is_not_nil(loaded)
+            assert.are.equal("Bob", loaded.characters[1].name)
+            assert.are.equal(101, loaded.last_fetch_page)
+        end)
+
         it("handles circular references gracefully", function()
             local data = { name = "Alice" }
             data.self = data -- Circular reference

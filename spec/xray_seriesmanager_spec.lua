@@ -176,6 +176,7 @@ describe("xray_seriesmanager", function()
             end
             plugin.cache_manager = {
                 saveCache = function() return true end,
+                asyncSaveCache = function() return true end,
                 loadCache = function() return {} end
             }
         end)

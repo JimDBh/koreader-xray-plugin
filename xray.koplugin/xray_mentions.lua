@@ -167,7 +167,7 @@ function M:saveMentionsToCache()
         updated.author_info = self.author_info
     end
 
-    self.cache_manager:saveCache(self.ui.document.file, updated)
+    self.cache_manager:asyncSaveCache(self.ui.document.file, updated)
 end
 
 function M:showMentionsForEntity(entity)
