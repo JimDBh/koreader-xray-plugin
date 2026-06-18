@@ -382,10 +382,10 @@ function M:continueWithFetch(reading_percent, is_update, last_fetch_page, is_sil
             local poll_count = 0
             local max_polls = 300 -- 10 minutes at 2s intervals
             local function poll()
-                if is_cancelled then
+                if is_cancelled or self.destroyed then
                     pcall(function() os.remove(result_file) end)
                     self.bg_fetch_active = false
-                    self:log("XRayPlugin: Fetch cancelled by user")
+                    self:log("XRayPlugin: Fetch cancelled or plugin destroyed")
                     return
                 end
                 if not self.ui or not self.ui.document then
@@ -1004,7 +1004,7 @@ function M:fetchMoreCharacters()
                 self:runPostFetchDuplicateCheck(title, author, reading_percent, false)
             end)
             
-            local added_msg = string.format(self.loc:t("msg_added_characters") or "Added %d new characters!", new_count)
+            local added_msg = self.loc:t("msg_added_characters", new_count)
             UIManager:show(InfoMessage:new{ text = added_msg, timeout = 3 })
 
             if menu_to_close then
@@ -1143,7 +1143,7 @@ function M:fetchMoreTerms()
             
             self.cache_manager:asyncSaveCache(self.ui.document.file, updated_data)
             
-            local added_msg = string.format(self.loc:t("msg_added_terms") or "Added %d new terms!", new_count)
+            local added_msg = self.loc:t("msg_added_terms", new_count)
             UIManager:show(InfoMessage:new{ text = added_msg, timeout = 3 })
 
             if menu_to_close then UIManager:close(menu_to_close) end
@@ -1493,7 +1493,7 @@ function M:fetchSeriesContext(is_silent, init_wait_dialog, cancel_ref)
         self:mergeSeriesContext(cache_data, series_info)
         if not is_silent then
             local count = series_info.index - 1
-            local loaded_msg = string.format(self.loc:t("series_context_loaded") or "Series context loaded (%d prior books).", count)
+            local loaded_msg = self.loc:t("series_context_loaded", count)
             UIManager:show(InfoMessage:new{
                 text = loaded_msg,
                 timeout = 5
@@ -1518,7 +1518,7 @@ function M:fetchSeriesContext(is_silent, init_wait_dialog, cancel_ref)
             closeInitWait()
             if wait_msg then UIManager:close(wait_msg) end
 
-            local progress_text = string.format(self.loc:t("fetching_series_context") or "Fetching series context: Book %d of %d…", current_idx, total_count)
+            local progress_text = self.loc:t("fetching_series_context", current_idx, total_count)
             wait_msg = ButtonDialog:new{
                 title = progress_text .. "\n\n" .. book_title .. "\n\n" .. (self.loc:t("fetching_wait") or "This may take a moment.\nTap Cancel to stop."),
                 buttons = {{{
@@ -1547,7 +1547,7 @@ function M:fetchSeriesContext(is_silent, init_wait_dialog, cancel_ref)
 
                 if not is_silent then
                     local count = series_info.index - 1
-                    local loaded_msg = string.format(self.loc:t("series_context_loaded") or "Series context loaded (%d prior books).", count)
+                    local loaded_msg = self.loc:t("series_context_loaded", count)
                     UIManager:show(InfoMessage:new{
                         text = loaded_msg,
                         timeout = 5

@@ -221,6 +221,24 @@ function XRayPlugin:init()
 end
 
 
+function XRayPlugin:destroy()
+    self:log("XRayPlugin: destroy called, marking as destroyed")
+    self.destroyed = true
+    
+    if self.active_mention_scan and self.active_mention_scan.cancel_handle then
+        self.active_mention_scan.cancel_handle:cancel()
+        self.active_mention_scan = nil
+    end
+
+    self:closeAllMenus()
+    
+    if WidgetContainer.destroy then
+        WidgetContainer.destroy(self)
+    end
+end
+
+
+
 -- Builds the X-Ray button spec for the dict popup.
 -- Used by both the new addToDictButtons API and the legacy onDictButtonsReady hook.
 function XRayPlugin:_buildXRayDictButton(dict_popup_arg)
@@ -296,21 +314,25 @@ function XRayPlugin:onReaderReady()
     
     -- Suggest switching to book language if appropriate
     UIManager:scheduleIn(5, function()
+        if self.destroyed then return end
         self:checkBookLanguageMatch()
     end)
     
     -- Weekly silent update check
     UIManager:scheduleIn(10, function()
+        if self.destroyed then return end
         self:checkWeeklyUpdate()
     end)
 
     -- Check series context prompt after ~15 seconds
     UIManager:scheduleIn(15, function()
+        if self.destroyed then return end
         self:checkSeriesContext()
     end)
 
     -- Enforce X-Ray as the first item in the Tools menu for all KOReader versions
     UIManager:scheduleIn(1, function()
+        if self.destroyed then return end
         local order_module
         -- Strategy A: Check newer path (ui/elements/reader_menu_order)
         local status_new, res_new = pcall(require, "ui/elements/reader_menu_order")
@@ -331,6 +353,7 @@ end
 function XRayPlugin:onNetworkConnected()
     self:log("XRayPlugin: onNetworkConnected fired. Scheduling series context check in 2 seconds.")
     UIManager:scheduleIn(2, function()
+        if self.destroyed then return end
         self:checkSeriesContext()
     end)
 end
@@ -342,6 +365,7 @@ function XRayPlugin:onPageUpdate(pageno)
         local p = self.pending_return_banner
         self.pending_return_banner = nil
         UIManager:scheduleIn(0.3, function()
+            if self.destroyed then return end
             self:showReturnBanner(p.return_page, p.entity, p.mentions, self.last_pageno)
         end)
     elseif not self.is_programmatic_navigation then
@@ -397,6 +421,7 @@ function XRayPlugin:onPageUpdate(pageno)
         if self.bg_fetch_pending or self.bg_fetch_active then return end
         self.bg_fetch_pending = true
         UIManager:scheduleIn(2, function()
+            if self.destroyed then return end
             self.bg_fetch_pending = false
             self:triggerBackgroundMergeFetch(chapter_title)
         end)
@@ -453,6 +478,7 @@ function XRayPlugin:onPageUpdate(pageno)
 
     -- Wait 2s for the reader to settle on the new chapter before fetching
     UIManager:scheduleIn(2, function()
+        if self.destroyed then return end
         self.bg_fetch_pending = false
         self:triggerBackgroundMergeFetch(chapter_title)
     end)
@@ -583,6 +609,7 @@ function XRayPlugin:autoLoadCache()
 
         -- Stage 2: Restore Sort Order (Deferred 500ms)
         UIManager:scheduleIn(500, function()
+            if self.destroyed then return end
             if not self.ui or not self.ui.document then return end
             self:log("XRayPlugin: Stage 2 - Restoring sort order")
             local function restoreOrder(list)
@@ -595,6 +622,7 @@ function XRayPlugin:autoLoadCache()
             
             -- Stage 3: Repair Page Numbers & Deduplicate (Deferred another 500ms)
             UIManager:scheduleIn(500, function()
+                if self.destroyed then return end
                 if not self.ui or not self.ui.document then return end
                 self:log("XRayPlugin: Stage 3 - Repairing pages and deduplicating")
                 local toc = self.ui.document:getToc()
@@ -613,6 +641,7 @@ function XRayPlugin:autoLoadCache()
                 self:log("XRayPlugin: Chunked post-load complete")
             end)
         UIManager:scheduleIn(200, function()
+            if self.destroyed then return end
             pcall(function()
                 local ok_order, reader_menu_order = pcall(require, "ui/elements/reader_menu_order")
                 if not ok_order then

@@ -199,7 +199,7 @@ function M:checkBookLanguageMatch()
 
     -- Show prompt
     local lang_name = supported[lang]
-    local msg = string.format(self.loc:t("msg_suggest_lang") or "This book is in %s. Switch X-Ray language to match?", lang_name)
+    local msg = self.loc:t("msg_suggest_lang", lang_name)
     
     local ButtonDialog = require("ui/widget/buttondialog")
     local mismatch_dialog
@@ -1268,7 +1268,7 @@ function M:showAIFindDuplicatesFlow(list, list_name, entity_label)
             if pair_idx > #pairs_found then
                 saveAndRefresh()
                 local msg = merge_count > 0
-                    and string.format(self.loc:t("ai_merged_n") or "Merged %d pair(s).", merge_count)
+                    and self.loc:t("ai_merged_n", merge_count)
                     or  (self.loc:t("no_merges_performed") or "No merges performed.")
                 UIManager:show(InfoMessage:new{ text = msg, timeout = 3 })
                 if list_name == "characters" then self:showCharacters()
@@ -2147,8 +2147,8 @@ function M:getAPIKeysMenu()
         { id = "chatgpt", name = "OpenAI ChatGPT" },
         { id = "deepseek", name = "DeepSeek" },
         { id = "claude", name = "Anthropic Claude" },
-        { id = "custom1", name = self.loc:t("custom_api_name") and string.format(self.loc:t("custom_api_name"), 1) or "Custom API 1 (OpenAI-compatible)" },
-        { id = "custom2", name = self.loc:t("custom_api_name") and string.format(self.loc:t("custom_api_name"), 2) or "Custom API 2 (OpenAI-compatible)" },
+        { id = "custom1", name = self.loc:t("custom_api_name", 1) },
+        { id = "custom2", name = self.loc:t("custom_api_name", 2) },
     }
     for _, p in ipairs(providers) do
         local prov_data = self.ai_helper.providers[p.id]
@@ -2219,7 +2219,7 @@ function M:getProviderKeySubMenu(provider, provider_name)
                         local current_model = (self.ai_helper and self.ai_helper.settings) and self.ai_helper.settings[provider .. "_model"] or ""
                         local model_dialog
                         model_dialog = InputDialog:new{
-                            title = self.loc:t("custom_api_model_title") and string.format(self.loc:t("custom_api_model_title"), provider:sub(-1)) or ("Custom API " .. provider:sub(-1) .. " — Default Model"),
+                            title = self.loc:t("custom_api_model_title", provider:sub(-1)),
                             input = current_model,
                             input_hint = self.loc:t("custom_api_model_hint") or "e.g., google/gemini-2.5-flash or openai/gpt-4o",
                             buttons = {
@@ -2230,7 +2230,7 @@ function M:getProviderKeySubMenu(provider, provider_name)
                                         UIManager:close(model_dialog)
                                         self.ai_helper:setCustomAPIConfig(provider, key, endpoint, model)
                                         self.ai_helper:init(self.path)
-                                        UIManager:show(InfoMessage:new{ text = self.loc:t("custom_api_saved") and string.format(self.loc:t("custom_api_saved"), provider:sub(-1)) or ("Custom API " .. provider:sub(-1) .. " configuration saved."), timeout = 3 })
+                                        UIManager:show(InfoMessage:new{ text = self.loc:t("custom_api_saved", provider:sub(-1)), timeout = 3 })
                                         UIManager:setDirty(nil, "ui")
                                     end }
                                 }
@@ -2243,7 +2243,7 @@ function M:getProviderKeySubMenu(provider, provider_name)
                     local function promptKey(endpoint)
                         local key_dialog
                         key_dialog = InputDialog:new{
-                            title = self.loc:t("custom_api_key_title") and string.format(self.loc:t("custom_api_key_title"), provider:sub(-1)) or ("Custom API " .. provider:sub(-1) .. " — API Key"),
+                            title = self.loc:t("custom_api_key_title", provider:sub(-1)),
                             input = ui_key,
                             buttons = {
                                 {
@@ -2264,7 +2264,7 @@ function M:getProviderKeySubMenu(provider, provider_name)
                         local current_endpoint = (self.ai_helper and self.ai_helper.settings) and self.ai_helper.settings[provider .. "_endpoint"] or "https://openrouter.ai/api/v1/chat/completions"
                         local endpoint_dialog
                         endpoint_dialog = InputDialog:new{
-                            title = self.loc:t("custom_api_endpoint_title") and string.format(self.loc:t("custom_api_endpoint_title"), provider:sub(-1)) or ("Custom API " .. provider:sub(-1) .. " — Endpoint URL"),
+                            title = self.loc:t("custom_api_endpoint_title", provider:sub(-1)),
                             input = current_endpoint,
                             input_hint = self.loc:t("custom_api_endpoint_hint") or "e.g., https://openrouter.ai/api/v1/chat/completions",
                             buttons = {
@@ -2726,6 +2726,10 @@ end
 
 function M:checkSeriesContext()
     self:log("XRayPlugin: Series: checkSeriesContext starting")
+    if self.destroyed then
+        self:log("XRayPlugin: Series: checkSeriesContext: plugin destroyed, skipping")
+        return
+    end
     if not self.ui or not self.ui.document then
         self:log("XRayPlugin: Series: checkSeriesContext: document/ui not available, skipping")
         return
@@ -2766,8 +2770,8 @@ function M:checkSeriesContext()
 
     self:log("XRayPlugin: Series: checkSeriesContext: Series detected: " .. series_info.name .. ", index=" .. tostring(series_info.index) .. ". Showing prompt dialog.")
 
-    local body_text = string.format(
-        self.loc:t("series_context_prompt_text") or "This appears to be Book %d of '%s'. Load a recap of the previous %d book(s)?\n\n(You can disable this in Settings → Series Context)",
+    local body_text = self.loc:t(
+        "series_context_prompt_text",
         series_info.index,
         series_info.name,
         series_info.index - 1

@@ -204,6 +204,7 @@ function Localization:t(key, ...)
         logger.warn("Localization: Missing translation key:", key)
         -- Return a user-friendly fallback instead of the key
         local fallbacks = {
+            msg_suggest_lang = "This book is in %s. Switch X-Ray language to match?",
             cache_saved = "[Saved]",
             cache_save_failed = "[Save failed]",
             ai_fetch_complete = "Fetched from %s\n\nBook: %s\nAuthor: %s\n\nCharacters: %d | Locations: %d | Themes: %d | Events: %d | History: %d\n\n%s\n\n%s",
@@ -407,13 +408,33 @@ function Localization:t(key, ...)
             end
         end
         
-        local success, result = pcall(string.format, translation, (unpack or table.unpack)(args))
-        if success then
-            return result
+        -- Check if it contains positional arguments like %1$d or %2$s
+        if translation:find("%%%d+%$") then
+            local success, result = pcall(function()
+                return string.gsub(translation, "%%(%d+)%$([-+ #0]?%d*%.?%d*[cdeEfgGiouuxXsqp%%])", function(index, spec)
+                    local idx = tonumber(index)
+                    local val = args[idx]
+                    if val == nil then val = "???" end
+                    if spec == "%" then return "%" end
+                    return string.format("%" .. spec, val)
+                end)
+            end)
+            if success then
+                return result
+            else
+                logger.warn("Localization: Positional format error for key:", key)
+                logger.warn("Localization: Error:", result)
+                return translation
+            end
         else
-            logger.warn("Localization: Format error for key:", key)
-            logger.warn("Localization: Error:", result)
-            return translation
+            local success, result = pcall(string.format, translation, (unpack or table.unpack)(args))
+            if success then
+                return result
+            else
+                logger.warn("Localization: Format error for key:", key)
+                logger.warn("Localization: Error:", result)
+                return translation
+            end
         end
     end
     
