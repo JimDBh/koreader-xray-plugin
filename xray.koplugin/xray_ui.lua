@@ -33,18 +33,20 @@ local DEFAULT_POPUP_FONT_SIZE = 18
 
 local function _getPopupFontSize()
     local size
+    local scaled = false
     if G_reader_settings then
         size = G_reader_settings:readSetting("cre_font_size") or G_reader_settings:readSetting("kopt_font_size")
     end
     if size then
-        return size
+        size = math.floor(size * 1.20)
     else
-        size = 18
-        if Screen and Screen.scaleBySize then
-            size = Screen:scaleBySize(size)
-        end
-        return size
+        size = 22
+        scaled = true
     end
+    if scaled and Screen.scaleBySize then
+        size = Screen:scaleBySize(size)
+    end
+    return size
 end
 
 local XRayBottomPopup = InputContainer:extend{
@@ -60,13 +62,6 @@ function XRayBottomPopup:init()
     local fs  = self.font_size
     local pad = self.margin_size  -- symmetric left/right/top/bottom
 
-    local function scaleSafe(val)
-        if Screen and Screen.scaleBySize then
-            return Screen:scaleBySize(val)
-        end
-        return val
-    end
-
     -- Uniform gap between every block
     local gap = math.max(1, math.floor(fs * 0.08))
 
@@ -74,44 +69,139 @@ function XRayBottomPopup:init()
 
     local e = self.entity or {}
 
-    -- Fonts: simple and safe fallback, no Android crash overhead
-    local face_normal = Font:getFace("cfont", fs)
+    local function resolveDocFontFilename(family)
+        if not family or family == "" then return nil, nil end
+        local path, idx
+        
+        local function ensureInFontList(p)
+            if not p or p == "" then return p end
+            pcall(function()
+                local FontList = require("fontlist")
+                local fl = FontList:getFontList()
+                local found = false
+                for _, v in ipairs(fl) do
+                    if v == p then found = true break end
+                end
+                if not found then
+                    table.insert(fl, p)
+                end
+            end)
+            return p
+        end
+
+        -- 1. Try CRe directly, as it knows exactly what file it uses for this family
+        pcall(function()
+            local cre = require("document/credocument"):engineInit()
+            if cre and cre.getFontFaceFilenameAndFaceIndex then
+                path, idx = cre.getFontFaceFilenameAndFaceIndex(family)
+            end
+        end)
+        
+        if type(path) == "string" and path ~= "" then
+            return ensureInFontList(path), idx
+        end
+        
+        -- 2. Fallback to FontList mapping
+        pcall(function()
+            local FontList = require("fontlist")
+            if not FontList.fontlist[1] then FontList:getFontList() end
+            if FontList.fontnames and FontList.fontnames[family] then
+                local infos = FontList.fontnames[family]
+                if infos and infos[1] and infos[1].path then
+                    path = ensureInFontList(infos[1].path)
+                    idx = infos[1].index
+                end
+            end
+        end)
+        return path, idx
+    end
+
+    local doc_family = G_reader_settings and G_reader_settings:readSetting("cre_font_family")
+    local Device = require("device")
+    local doc_filename, doc_faceindex
+    if not Device:isAndroid() then
+        doc_filename, doc_faceindex = resolveDocFontFilename(doc_family)
+    end
+
+    local function getAvailableSerifFont()
+        local ok, FontList = pcall(require, "fontlist")
+        if not ok or not FontList then return nil, nil end
+        if not FontList.fontlist or not FontList.fontlist[1] then
+            pcall(function() FontList:getFontList() end)
+        end
+        if FontList.fontnames then
+            local candidates = {
+                "free serif", "droid serif", "noto serif", "dejavu serif",
+                "gentium book basic", "charis sil", "libertinus serif",
+                "georgia", "times new roman", "times", "serif"
+            }
+            for _, cand in ipairs(candidates) do
+                for family_name, infos in pairs(FontList.fontnames) do
+                    if family_name:lower():find(cand, 1, true) then
+                        if infos and infos[1] and infos[1].path then
+                            return infos[1].path, infos[1].index
+                        end
+                    end
+                end
+            end
+            for family_name, infos in pairs(FontList.fontnames) do
+                if family_name:lower():find("serif", 1, true) then
+                    if infos and infos[1] and infos[1].path then
+                        return infos[1].path, infos[1].index
+                    end
+                end
+            end
+        end
+        return nil, nil
+    end
+
+    local function getFontSafe(preferred, preferred_idx, fallback_path, fallback_idx, size)
+        local face = Font:getFace("cfont", size)
+        if preferred then
+            local ok, f = pcall(Font.getFace, Font, preferred, size, preferred_idx)
+            if ok and f then return f end
+        end
+        if fallback_path then
+            local ok, f = pcall(Font.getFace, Font, fallback_path, size, fallback_idx)
+            if ok and f then return f end
+        end
+        return face
+    end
+
+    -- Fonts
+    local serif_path, serif_idx = getAvailableSerifFont()
+    local face_normal = getFontSafe(doc_filename, doc_faceindex, serif_path, serif_idx, fs)
     local face_btn    = Font:getFace("cfont", math.max(12, fs - 2))
 
     local fs_small    = math.max(12, fs - 3)
-    local face_small_normal = Font:getFace("cfont", fs_small)
+    local face_small_normal = getFontSafe(doc_filename, doc_faceindex, serif_path, serif_idx, fs_small)
 
     -- TextBoxWidget — wrap multilínea, justificado con guionado
-    local function make_text(text, face, align)
+    local function make_text(text, face, align, is_bold)
         return TextBoxWidget:new{
             text       = text,
             face       = face,
             width      = inner_w,
             alignment  = align or "justify",
             justified  = true,
+            bold       = is_bold,
         }
     end
 
     local HorizontalGroup = require("ui/widget/horizontalgroup")
     local HorizontalSpan  = require("ui/widget/horizontalspan")
-    local btn_padding_h   = (Size.padding and Size.padding.large) or 14
-    local btn_padding_v   = (Size.padding and Size.padding.small) or 6
+    local btn_padding     = (Size.padding and Size.padding.small) or 4
 
     local function make_btn(label, cb)
-        local btn = Button:new{
+        return Button:new{
             text       = label,
             face       = face_btn,
-            padding_h  = btn_padding_h,
-            padding_v  = btn_padding_v,
+            padding    = btn_padding,
             margin     = 0,
-            radius     = (Size.radius and Size.radius.btn) or 4,
-            bordersize = (Size.border and Size.border.btn) or 1,
+            radius     = 0,
+            bordersize = 0,
             callback   = cb,
         }
-        if btn.frame then
-            btn.frame.background = Blitbuffer.COLOR_LIGHT_GRAY
-        end
-        return btn
     end
 
     local function get_loc_t(key, default)
@@ -122,7 +212,7 @@ function XRayBottomPopup:init()
     local vg = VerticalGroup:new{ align = "left" }
 
     -- 1. Name (bold, justified)
-    vg[#vg+1] = make_text(tostring(e.name or "?"), face_normal, "justify")
+    vg[#vg+1] = make_text(tostring(e.name or "?"), face_normal, "justify", true)
 
     local has_metadata = false
 
@@ -147,45 +237,31 @@ function XRayBottomPopup:init()
         has_metadata = true
     end
 
-    -- Helper to safely convert to string (handling tables)
-    local function safe_str(val)
-        if type(val) == "table" then
-            return table.concat(val, ", ")
-        elseif val then
-            return tostring(val)
-        end
-        return ""
-    end
-
     -- 3. Role
-    local role_str = safe_str(e.role)
-    if role_str ~= "" and role_str ~= "---" then
+    if e.role and e.role ~= "" and e.role ~= "---" then
         vg[#vg+1] = VerticalSpan:new{ width = gap }
-        vg[#vg+1] = make_text(get_loc_t("label_role", "ROLE") .. ": " .. role_str, face_small_normal, "justify")
+        vg[#vg+1] = make_text(get_loc_t("label_role", "ROLE") .. ": " .. e.role, face_small_normal, "justify")
         has_metadata = true
     end
 
     -- 4. Gender
-    local gender_str = safe_str(e.gender)
-    if gender_str ~= "" and gender_str ~= "---" then
+    if e.gender and e.gender ~= "" and e.gender ~= "---" then
         vg[#vg+1] = VerticalSpan:new{ width = gap }
-        vg[#vg+1] = make_text(get_loc_t("label_gender", "GENDER") .. ": " .. gender_str, face_small_normal, "justify")
+        vg[#vg+1] = make_text(get_loc_t("label_gender", "GENDER") .. ": " .. e.gender, face_small_normal, "justify")
         has_metadata = true
     end
 
     -- 5. Occupation
-    local occ_str = safe_str(e.occupation)
-    if occ_str ~= "" and occ_str ~= "---" then
+    if e.occupation and e.occupation ~= "" and e.occupation ~= "---" then
         vg[#vg+1] = VerticalSpan:new{ width = gap }
-        vg[#vg+1] = make_text(get_loc_t("label_occupation", "OCCUPATION") .. ": " .. occ_str, face_small_normal, "justify")
+        vg[#vg+1] = make_text(get_loc_t("label_occupation", "OCCUPATION") .. ": " .. e.occupation, face_small_normal, "justify")
         has_metadata = true
     end
 
     -- 6. AI Reasoning
-    local air_str = safe_str(e.ai_reasoning)
-    if air_str ~= "" then
+    if e.ai_reasoning and e.ai_reasoning ~= "" then
         vg[#vg+1] = VerticalSpan:new{ width = gap }
-        vg[#vg+1] = make_text("[" .. get_loc_t("label_reasoning", "AI REASONING") .. "]\n" .. air_str, face_small_normal, "justify")
+        vg[#vg+1] = make_text("[" .. get_loc_t("label_reasoning", "AI REASONING") .. "]\n" .. e.ai_reasoning, face_small_normal, "justify")
         has_metadata = true
     end
 
@@ -273,11 +349,7 @@ function XRayBottomPopup:init()
     }
 
     local pad_top_px    = math.floor(fs * 0.55)
-    local pad_bottom_px = math.floor(fs * 0.35) + scaleSafe(10)
-    local Device = require("device")
-    if Device:isAndroid() then
-        pad_bottom_px = pad_bottom_px + scaleSafe(12)
-    end
+    local pad_bottom_px = math.floor(fs * 0.35)
 
     local outer_vg = VerticalGroup:new{ align = "left" }
     outer_vg[1] = separator
