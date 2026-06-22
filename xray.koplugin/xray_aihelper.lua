@@ -74,6 +74,22 @@ function AIHelper:log(message)
     XRayLogger:log(message)
 end
 
+function AIHelper:isAnthropic(provider, endpoint)
+    if provider == "claude" then return true end
+    if (provider == "custom1" or provider == "custom2") then
+        local prov = self.providers[provider]
+        if prov and prov.format == "anthropic" then
+            return true
+        elseif prov and prov.format == "openai" then
+            return false
+        end
+        if endpoint then
+            return endpoint:find("/v1/messages") ~= nil or endpoint:find("/messages") ~= nil
+        end
+    end
+    return false
+end
+
 -- Strip invalid UTF-8 sequences and disallowed control bytes from a string.
 -- Byte-based string.sub() throughout the plugin can slice multi-byte UTF-8
 -- characters mid-sequence, leaving an invalid prefix/suffix that makes the
@@ -250,10 +266,23 @@ function AIHelper:buildComprehensiveRequest(title, author, context, prompt_overr
                     },
                     generationConfig = gen_config
                 })
-            elseif ai.provider == "claude" then
+            elseif self:isAnthropic(ai.provider, config.endpoint) then
                 local model = ai.model or "claude-3-7-sonnet-latest"
                 url = config.endpoint or "https://api.anthropic.com/v1/messages"
-                headers = { ["Content-Type"] = "application/json", ["x-api-key"] = config.api_key, ["anthropic-version"] = "2023-06-01" }
+                headers = {
+                    ["Content-Type"] = "application/json",
+                    ["x-api-key"] = config.api_key,
+                    ["Authorization"] = "Bearer " .. config.api_key,
+                    ["anthropic-version"] = "2023-06-01"
+                }
+                
+                if ai.provider == "custom1" or ai.provider == "custom2" then
+                    if (config.endpoint or ""):find("openrouter.ai") then
+                        headers["HTTP-Referer"]      = "https://github.com/koreader/koreader-xray-plugin"
+                        headers["X-OpenRouter-Title"] = "KOReader X-Ray"
+                    end
+                end
+                
                 local system_instruction_text = (self.prompts and self.prompts.system_instruction or "Return valid JSON ONLY.") .. " You MUST output strictly valid JSON, starting with '{'."
                 
                 local req_body = {
@@ -286,6 +315,12 @@ function AIHelper:buildComprehensiveRequest(title, author, context, prompt_overr
                         -- Claude extended thinking configuration
                         req_body.thinking = { type = "enabled", budget_tokens = budget }
                     end
+                end
+                
+                -- Per-slot "Is Reasoning Model" setting: raise token ceiling
+                local is_reasoning = self.settings and self.settings[ai.provider .. "_is_reasoning"]
+                if is_reasoning then
+                    req_body.max_tokens = 32000
                 end
                 
                 body = json.encode(req_body)
@@ -525,6 +560,32 @@ function AIHelper:makeRequestAsync(request_params, result_file)
                                     end
                                 end
                             end
+                        -- Anthropic wraps content in content[].text
+                        elseif parsed.content and parsed.content[1] then
+                            local content = parsed.content[1].text
+                            if content then
+                                local text_to_decode = "{" .. content
+                                local inner_ok, inner = pcall(json_req.decode, text_to_decode)
+                                valid_json = inner_ok and inner ~= nil
+                                if not valid_json then
+                                    local first_brace = text_to_decode:find("{", 1, true)
+                                    if first_brace then
+                                        local repaired = self:fixTruncatedJSON(text_to_decode:sub(first_brace))
+                                        local repair_ok, repair_data = pcall(json_req.decode, repaired)
+                                        if repair_ok and repair_data then
+                                            self:log("AIHelper Child: fixTruncatedJSON succeeded for Anthropic / " .. req.provider)
+                                            local synthetic = json_req.encode({
+                                                content = {{ text = repaired:sub(2), type = "text" }}
+                                            })
+                                            response_text = synthetic
+                                            valid_json = true
+                                        else
+                                            self:log("AIHelper Child: Quick repair unsuccessful; handing off to main thread for advanced parsing")
+                                            valid_json = true
+                                        end
+                                    end
+                                end
+                            end
                         end
                     end
                     
@@ -719,7 +780,7 @@ function AIHelper:checkAsyncResult(result_file)
                 end
             end
         end
-    elseif provider == "claude" then
+    elseif provider == "claude" or self:isAnthropic(provider, self.providers[provider] and self.providers[provider].endpoint) then
         if data.content and data.content[1] and data.content[1].text then
             -- Prepend the '{' that we prefilled in the request
             ai_text = "{" .. data.content[1].text
@@ -848,6 +909,7 @@ function AIHelper:loadConfig()
             if config[slot .. "_api_key"]  then self.providers[slot].api_key  = config[slot .. "_api_key"];  self.config_keys[slot] = config[slot .. "_api_key"] end
             if config[slot .. "_endpoint"] then self.providers[slot].endpoint = config[slot .. "_endpoint"] end
             if config[slot .. "_model"]    then self.providers[slot].model    = config[slot .. "_model"]    end
+            if config[slot .. "_format"]   then self.providers[slot].format   = config[slot .. "_format"]   end
         end
     end
 end
@@ -1053,6 +1115,7 @@ function AIHelper:loadSettings()
         end
         if settings[slot .. "_endpoint"] then self.providers[slot].endpoint = settings[slot .. "_endpoint"] end
         if settings[slot .. "_model"] then self.providers[slot].model = settings[slot .. "_model"] end
+        if settings[slot .. "_format"] then self.providers[slot].format = settings[slot .. "_format"] end
     end
     
     self:loadLanguage()
@@ -1360,6 +1423,8 @@ function AIHelper:executeUnifiedRequest(prompt)
             local result, err_code, err_msg
             if ai.provider == "gemini" then
                 result, err_code, err_msg = self:callGemini(prompt, config, ai.model)
+            elseif self:isAnthropic(ai.provider, config.endpoint) then
+                result, err_code, err_msg = self:callClaude(prompt, config, ai.model or config.model)
             elseif ai.provider == "custom1" or ai.provider == "custom2" then
                 result, err_code, err_msg = self:callChatGPT(prompt, config, ai.model or config.model)
             else
@@ -1423,6 +1488,102 @@ function AIHelper:mergeDescriptionsWithAI(primary_desc, secondary_desc)
     end
     self:log("AIHelper: mergeDescriptionsWithAI failed: " .. tostring(err_msg))
     return nil
+end
+
+function AIHelper:callClaude(prompt, config, current_model)
+    local model = current_model or "claude-3-7-sonnet-latest"
+    self:log("AIHelper: Starting Anthropic Claude request for model: " .. model)
+    
+    local system_instruction_text = (self.prompts and self.prompts.system_instruction or "Return valid JSON ONLY.") .. " You MUST output strictly valid JSON, starting with '{'."
+    
+    local req_body = {
+        model = model,
+        max_tokens = 8192,
+        system = system_instruction_text,
+        messages = {
+            { role = "user", content = prompt },
+            { role = "assistant", content = "{" }
+        }
+    }
+    
+    -- Support thinking config for Claude models if enabled/supported
+    if model:find("sonnet") or model:find("opus") or model:find("haiku") then
+        local current_effort = self.settings and self.settings.reasoning_effort
+        if current_effort then
+            local effort_map = { low = 2048, medium = 4096, high = 8192 }
+            local budget = effort_map[current_effort] or 4096
+            if model:find("haiku") and budget > 2000 then
+                budget = 2000
+                req_body.max_tokens = 8192
+            else
+                req_body.max_tokens = budget + 8000
+            end
+            req_body.thinking = { type = "enabled", budget_tokens = budget }
+        end
+    end
+    
+    local provider_id = nil
+    for p_id, p_config in pairs(self.providers) do
+        if p_config == config then
+            provider_id = p_id
+            break
+        end
+    end
+    
+    if provider_id then
+        local is_reasoning = self.settings and self.settings[provider_id .. "_is_reasoning"]
+        if is_reasoning then
+            req_body.max_tokens = 32000
+        end
+    end
+    
+    local request_body = json.encode(req_body)
+    self:log("AIHelper: Sending Anthropic request (" .. #request_body .. " bytes)")
+    
+    local headers = { 
+        ["Content-Type"] = "application/json", 
+        ["x-api-key"] = config.api_key, 
+        ["Authorization"] = "Bearer " .. config.api_key,
+        ["anthropic-version"] = "2023-06-01" 
+    }
+    
+    if provider_id and (provider_id == "custom1" or provider_id == "custom2") then
+        if (config.endpoint or ""):find("openrouter.ai") then
+            headers["HTTP-Referer"]       = "https://github.com/koreader/koreader-xray-plugin"
+            headers["X-OpenRouter-Title"] = "KOReader X-Ray"
+        end
+    end
+    
+    local url = config.endpoint or "https://api.anthropic.com/v1/messages"
+    local ok, code, response_text = self:makeRequest(url, headers, request_body)
+    
+    local code_num = tonumber(code)
+    self:log("AIHelper: Anthropic Response Code: " .. tostring(code_num))
+    self:log("AIHelper: Anthropic Response received (" .. (response_text and #response_text or 0) .. " bytes)")
+    
+    if code_num == 200 and response_text then
+        local success, data = pcall(json.decode, response_text)
+        if success and data.content and data.content[1] and data.content[1].text then
+            local text_content = "{" .. data.content[1].text
+            local parsed_data, err = self:parseAIResponse(text_content)
+            if parsed_data then
+                return parsed_data
+            end
+            self:log("AIHelper: Anthropic parse failed: " .. tostring(err))
+        end
+    else
+        local error_detail = "HTTP " .. tostring(code_num or code or "Unknown")
+        if response_text then
+            local s, err_data = pcall(json.decode, response_text)
+            if s and err_data and err_data.error then
+                error_detail = err_data.error.message or error_detail
+            end
+            self:log("AIHelper: Anthropic API Error: " .. response_text)
+        end
+        return nil, "error_api", error_detail
+    end
+    
+    return nil, "error_api", "Anthropic failed or returned invalid JSON"
 end
 
 function AIHelper:callGemini(prompt, config, current_model)
@@ -1745,18 +1906,21 @@ function AIHelper:setAPIKey(p, k)
     return true 
 end
 
-function AIHelper:setCustomAPIConfig(slot, key, endpoint, model)
+function AIHelper:setCustomAPIConfig(slot, key, endpoint, model, format)
     -- slot is "custom1" or "custom2"
     self.providers[slot].api_key        = key
     self.providers[slot].endpoint       = endpoint
     self.providers[slot].model          = model
+    if format then self.providers[slot].format = format end
     self.providers[slot].ui_key_active  = true
-    self:saveSettings({
+    local s_updates = {
         [slot .. "_api_key"]    = key,
         [slot .. "_use_ui_key"] = true,
         [slot .. "_endpoint"]   = endpoint,
         [slot .. "_model"]      = model,
-    })
+    }
+    if format then s_updates[slot .. "_format"] = format end
+    self:saveSettings(s_updates)
     return true
 end
 

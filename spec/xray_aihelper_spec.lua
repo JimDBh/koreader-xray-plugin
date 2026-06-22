@@ -148,4 +148,33 @@ describe("AIHelper", function()
             assert.is_true(saved)
         end)
     end)
+
+    describe("isAnthropic", function()
+        it("should return true for claude provider", function()
+            assert.is_true(AIHelper:isAnthropic("claude", nil))
+        end)
+
+        it("should return false for chatgpt/gemini providers", function()
+            assert.is_false(AIHelper:isAnthropic("chatgpt", nil))
+            assert.is_false(AIHelper:isAnthropic("gemini", nil))
+        end)
+
+        it("should return true for custom provider if format is explicitly anthropic", function()
+            AIHelper.providers.custom1.format = "anthropic"
+            assert.is_true(AIHelper:isAnthropic("custom1", "https://api.openai.com/v1/chat/completions"))
+            AIHelper.providers.custom1.format = nil
+        end)
+
+        it("should return false for custom provider if format is explicitly openai", function()
+            AIHelper.providers.custom1.format = "openai"
+            assert.is_false(AIHelper:isAnthropic("custom1", "https://api.anthropic.com/v1/messages"))
+            AIHelper.providers.custom1.format = nil
+        end)
+
+        it("should auto-detect anthropic endpoints via URL search", function()
+            assert.is_true(AIHelper:isAnthropic("custom1", "https://api.openmodel.ai/v1/messages"))
+            assert.is_true(AIHelper:isAnthropic("custom1", "http://localhost:8000/messages"))
+            assert.is_false(AIHelper:isAnthropic("custom1", "https://openrouter.ai/api/v1/chat/completions"))
+        end)
+    end)
 end)
