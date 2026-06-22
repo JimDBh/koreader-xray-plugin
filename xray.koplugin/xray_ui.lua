@@ -715,7 +715,7 @@ function M:checkBookLanguageMatch()
     
     -- Check if we should ignore this book (from cache)
     if not self.cache_manager then self.cache_manager = require(plugin_path .. "xray_cachemanager"):new() end
-    local cache = self.cache_manager:loadCache(self.ui.document.file)
+    local cache = self.book_data or self.cache_manager:loadCache(self.ui.document.file)
     if cache and cache.ignore_lang_mismatch then return end
 
     -- Show prompt
@@ -756,7 +756,10 @@ function M:checkBookLanguageMatch()
                 {
                     text = self.loc:t("dont_ask_again") or "Don't ask again",
                     callback = function()
-                        local current_cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+                        if not self.book_data then
+                            self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
+                        end
+                        local current_cache = self.book_data
                         current_cache.ignore_lang_mismatch = true
                         self.cache_manager:asyncSaveCache(self.ui.document.file, current_cache)
                         UIManager:close(mismatch_dialog)
@@ -1742,7 +1745,7 @@ function M:showBookTypeSettings()
         
         local current = "auto"
         if not self.cache_manager then self.cache_manager = require(plugin_path .. "xray_cachemanager"):new() end
-        local cache = self.cache_manager:loadCache(self.ui.document.file)
+        local cache = self.book_data or self.cache_manager:loadCache(self.ui.document.file)
         if cache and cache.book_mode_override then
             current = cache.book_mode_override
         else
@@ -1750,7 +1753,10 @@ function M:showBookTypeSettings()
         end
 
         local function setType(mode)
-            local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+            if not self.book_data then
+                self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
+            end
+            local cache = self.book_data
             cache.book_mode_override = mode
             self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
             self.book_type = (mode == "auto") and nil or mode
@@ -2071,7 +2077,10 @@ function M:showAIFindDuplicatesFlow(list, list_name, entity_label)
             if not self.cache_manager then
                 self.cache_manager = require(plugin_path .. "xray_cachemanager"):new()
             end
-            local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+            if not self.book_data then
+                self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
+            end
+            local cache = self.book_data
             if list_name == "characters" then
                 cache.characters = list
             elseif list_name == "locations" then
@@ -2216,7 +2225,10 @@ function M:showMergeFlow(list, list_name)
                                         if not self.cache_manager then
                                             self.cache_manager = require(plugin_path .. "xray_cachemanager"):new()
                                         end
-                                        local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+                                        if not self.book_data then
+                                            self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
+                                        end
+                                        local cache = self.book_data
                                         if list_name == "characters" then
                                             cache.characters = list
                                         elseif list_name == "locations" then
@@ -3732,10 +3744,12 @@ function M:checkSeriesContext()
                         if not self.cache_manager then
                             self.cache_manager = require(plugin_path .. "xray_cachemanager"):new()
                         end
-                        local cache = self.cache_manager:loadCache(self.ui.document.file) or {}
+                        if not self.book_data then
+                            self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
+                        end
+                        local cache = self.book_data
                         cache.series_context_dismissed = true
                         self.cache_manager:asyncSaveCache(self.ui.document.file, cache)
-                        self.book_data = cache
                         local disabled_msg = self.loc:t("series_disabled_msg") or "Auto-prompt disabled for this book. You can manually fetch recap from X-Ray menu."
                         UIManager:show(InfoMessage:new{
                             text = disabled_msg,
