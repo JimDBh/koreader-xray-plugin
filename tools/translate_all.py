@@ -44,7 +44,7 @@ def call_gemini(prompt):
             with urllib.request.urlopen(req) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 text = res_data['candidates'][0]['content']['parts'][0]['text']
-                time.sleep(4.0)  # Space out requests to avoid 15 RPM rate limits
+                time.sleep(10.0)  # Space out requests to avoid rate limits
                 text_stripped = text.strip()
                 first_brace = text_stripped.find('{')
                 last_brace = text_stripped.rfind('}')
@@ -334,6 +334,10 @@ Strings to translate:
             translated_batch = call_gemini(prompt)
             for k, v in translated_batch.items():
                 target_po_dict[k] = v
+            # Save incrementally to prevent losing progress on rate limits
+            target_po_dict['language_name'] = lang_name
+            save_po(target_po_path, lang_name, lang_code, en_po_dict.keys(), target_po_dict)
+            print(f"Saved batch progress to {target_po_path}")
                 
         target_po_dict['language_name'] = lang_name
         save_po(target_po_path, lang_name, lang_code, en_po_dict.keys(), target_po_dict)

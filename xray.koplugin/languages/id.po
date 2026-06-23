@@ -201,16 +201,16 @@ msgid "desc_len_about_timeline"
 msgstr "LINI MASA — SATU ACARA PER BAB (selalu)\n\nLini masa selalu memiliki tepat satu entri per bab. Pengaturan ini hanya memengaruhi seberapa detail yang disertakan dalam setiap ringkasan.\n\n• Pendek (~50 karakter): Ringkasan satu frasa singkat.\n• Default (~80 karakter): Ringkasan standar.\n• Detail (~150 karakter): Menyertakan konteks dan konsekuensi.\n• Sangat Detail (~200 karakter): Deskripsi narasi lengkap.\n\nTidak ada pilihan konsekuensi jumlah untuk lini masa."
 
 msgid "desc_len_default"
-msgstr "desc_len_default"
+msgstr "Bawaan"
 
 msgid "desc_len_detailed"
-msgstr "desc_len_detailed"
+msgstr "Rinci"
 
 msgid "desc_len_short"
-msgstr "desc_len_short"
+msgstr "Singkat"
 
 msgid "desc_len_v_detailed"
-msgstr "desc_len_v_detailed"
+msgstr "Sangat Rinci"
 
 msgid "dont_ask_again"
 msgstr "Jangan tanya lagi"
@@ -246,7 +246,7 @@ msgid "error_api_key_title"
 msgstr "Kunci API Tidak Valid"
 
 msgid "error_extract_text"
-msgstr "error_extract_text"
+msgstr "Kesalahan: Tidak dapat mengekstrak teks buku."
 
 msgid "error_model_access_desc"
 msgstr "Kunci API Anda tidak memiliki akses ke model yang dipilih. Anda mungkin perlu menggunakan model atau penyedia yang berbeda."
@@ -261,7 +261,7 @@ msgid "error_model_not_found_title"
 msgstr "Model Tidak Ditemukan"
 
 msgid "error_no_api_key"
-msgstr "error_no_api_key"
+msgstr "Kesalahan: Kunci API tidak ditemukan"
 
 msgid "error_parse_desc"
 msgstr "AI mengembalikan respons yang tidak dapat diproses. Ini mungkin gangguan sementara."
@@ -294,19 +294,19 @@ msgid "error_unknown_title"
 msgstr "Pengambilan Gagal"
 
 msgid "extracting_more_characters"
-msgstr "extracting_more_characters"
+msgstr "Mengekstrak karakter tambahan..."
 
 msgid "extracting_more_terms"
 msgstr "Mengekstrak istilah tambahan..."
 
 msgid "fetch_button"
-msgstr "fetch_button"
+msgstr "Ambil"
 
 msgid "fetch_single_word_prompt"
 msgstr "Tidak ada data X-Ray yang ditemukan untuk '%s'. Apakah Anda ingin mencarinya?"
 
 msgid "fetch_successful"
-msgstr "fetch_successful"
+msgstr "Pengambilan berhasil"
 
 msgid "fetching_ai"
 msgstr "Menganalisis buku untuk menghasilkan data X-Ray..."
@@ -318,16 +318,16 @@ msgid "fetching_series_context"
 msgstr "Mengambil konteks seri: Buku %d dari %d…"
 
 msgid "fetching_series_info"
-msgstr "fetching_series_info"
+msgstr "Mengidentifikasi seri buku…"
 
 msgid "fetching_wait"
-msgstr "fetching_wait"
+msgstr "⏳ Harap tunggu...\nProses ini mungkin memakan waktu 10-50 detik."
 
 msgid "find_mentions"
 msgstr "Temukan Sebutan"
 
 msgid "full_book_option"
-msgstr "full_book_option"
+msgstr "Mode Buku Penuh"
 
 msgid "label_aliases"
 msgstr "ALIAS"
@@ -363,13 +363,13 @@ msgid "lang_follow_book"
 msgstr "Otomatis (Ikuti Buku)"
 
 msgid "lang_follow_system"
-msgstr "lang_follow_system"
+msgstr "Otomatis (Ikuti Sistem)"
 
 msgid "lang_mismatch_title"
 msgstr "Ketidakcocokan Bahasa"
 
 msgid "language_changed_reopen"
-msgstr "language_changed_reopen"
+msgstr "Bahasa diubah. Buka kembali menu untuk melihat perubahan."
 
 msgid "later"
 msgstr "Nanti"
@@ -438,16 +438,16 @@ msgid "menu_about"
 msgstr "Tentang"
 
 msgid "menu_ai_settings"
-msgstr "menu_ai_settings"
+msgstr "Pengaturan AI"
 
 msgid "menu_api_keys"
-msgstr "menu_api_keys"
+msgstr "Kunci API & Penyedia"
 
 msgid "menu_author_info"
-msgstr "menu_author_info"
+msgstr "Info Penulis"
 
 msgid "menu_auto_update_frequency"
-msgstr "menu_auto_update_frequency"
+msgstr "Pengaturan Auto X-Ray"
 
 msgid "menu_beta_channel"
 msgstr "Pengaturan Saluran Beta"
@@ -456,16 +456,16 @@ msgid "menu_book_mode"
 msgstr "Mode Buku"
 
 msgid "menu_characters"
-msgstr "menu_characters"
+msgstr "Karakter"
 
 msgid "menu_clear_cache"
-msgstr "menu_clear_cache"
+msgstr "Bersihkan Cache"
 
 msgid "menu_clear_logs"
 msgstr "Bersihkan Log"
 
 msgid "menu_config_header"
-msgstr "menu_config_header"
+msgstr "--- Konfigurasi Saat Ini ---"
 
 msgid "menu_content_fetch_settings"
 msgstr "Pengaturan Konten & Pengambilan"
@@ -480,13 +480,13 @@ msgid "menu_display_ui_settings"
 msgstr "Pengaturan Tampilan & UI"
 
 msgid "menu_enter_custom_model"
-msgstr "menu_enter_custom_model"
+msgstr "Masukkan model kustom..."
 
 msgid "menu_entity_ui_mode"
 msgstr "Gaya Deskripsi Entitas"
 
 msgid "menu_fetch_author"
-msgstr "menu_fetch_author"
+msgstr "Ambil Info Penulis (AI)"
 
 msgid "menu_fetch_more_chars"
 msgstr "Ambil Karakter Lainnya"
@@ -501,37 +501,37 @@ msgid "menu_frequency"
 msgstr "Frekuensi"
 
 msgid "menu_historical_figures"
-msgstr "menu_historical_figures"
+msgstr "Tokoh Sejarah"
 
 msgid "menu_language"
-msgstr "menu_language"
+msgstr "Bahasa"
 
 msgid "menu_linked_entries_settings"
 msgstr "Pengaturan Entri Terkait"
 
 msgid "menu_locations"
-msgstr "menu_locations"
+msgstr "Lokasi"
 
 msgid "menu_maintenance"
-msgstr "menu_maintenance"
+msgstr "Pemeliharaan"
 
 msgid "menu_mentions_settings"
 msgstr "Pengaturan Sebutan"
 
 msgid "menu_primary_ai_model"
-msgstr "menu_primary_ai_model"
+msgstr "Model AI Utama"
 
 msgid "menu_reasoning_effort"
 msgstr "Upaya Penalaran AI"
 
 msgid "menu_secondary_ai_model"
-msgstr "menu_secondary_ai_model"
+msgstr "Model AI Sekunder"
 
 msgid "menu_series_context"
 msgstr "Konteks Seri"
 
 msgid "menu_settings"
-msgstr "menu_settings"
+msgstr "Pengaturan"
 
 msgid "menu_terms"
 msgstr "Glosarium"
@@ -540,22 +540,22 @@ msgid "menu_timeline"
 msgstr "Lini Masa"
 
 msgid "menu_ui_popup_intext"
-msgstr "menu_ui_popup_intext"
+msgstr "Gunakan Gaya Catatan Kaki untuk Pencarian Dalam Teks"
 
 msgid "menu_ui_popup_menu"
-msgstr "menu_ui_popup_menu"
+msgstr "Gunakan Gaya Catatan Kaki untuk Pencarian Menu"
 
 msgid "menu_update_xray"
 msgstr "Perbarui Data X-Ray (Gabung)"
 
 msgid "menu_view_config"
-msgstr "menu_view_config"
+msgstr "Lihat Semua Nilai Konfigurasi"
 
 msgid "menu_xray"
-msgstr "menu_xray"
+msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "menu_xray_mode"
+msgstr "Pencarian X-Ray Dalam Teks"
 
 msgid "merge_back"
 msgstr "← Kembali"
@@ -609,10 +609,10 @@ msgid "multiple_matches"
 msgstr "Beberapa kecocokan untuk '%s'. Mana yang Anda maksud?"
 
 msgid "next"
-msgstr "next"
+msgstr "Berikutnya"
 
 msgid "no"
-msgstr "no"
+msgstr "Tidak"
 
 msgid "no_api_key"
 msgstr "Kunci API tidak diatur!"
@@ -621,7 +621,7 @@ msgid "no_author_data_fetch"
 msgstr "Tidak ada info penulis yang tersedia. Ambil dari AI?"
 
 msgid "no_character_data"
-msgstr "no_character_data"
+msgstr "Belum ada data karakter.\n\nSilakan gunakan 'Ambil Data X-Ray' terlebih dahulu."
 
 msgid "no_data_prompt"
 msgstr "Tidak ada data X-Ray yang ditemukan untuk buku ini. Apakah Anda ingin mengambilnya dari AI sekarang?"
@@ -630,10 +630,10 @@ msgid "no_duplicates_found"
 msgstr "Tidak ada duplikat yang ditemukan."
 
 msgid "no_historical_data"
-msgstr "no_historical_data"
+msgstr "Belum ada data tokoh sejarah.\n\nSilakan gunakan 'Ambil Data X-Ray' terlebih dahulu.\n\nAI akan mendeteksi tokoh sejarah\nnyata yang disebutkan dalam buku."
 
 msgid "no_location_data"
-msgstr "no_location_data"
+msgstr "Belum ada data lokasi. Silakan gunakan 'Ambil Data X-Ray' terlebih dahulu."
 
 msgid "no_merges_performed"
 msgstr "Tidak ada penggabungan yang dilakukan."
@@ -642,25 +642,25 @@ msgid "no_terms_data"
 msgstr "Belum ada data istilah. Silakan gunakan 'Ambil Data X-Ray' terlebih dahulu."
 
 msgid "no_timeline_data"
-msgstr "no_timeline_data"
+msgstr "Belum ada data lini masa.\n\nSilakan gunakan 'Ambil Data X-Ray' terlebih dahulu.\n\nAI akan menampilkan peristiwa penting\nsesuai urutan kronologis."
 
 msgid "ok"
-msgstr "ok"
+msgstr "OK"
 
 msgid "path"
-msgstr "path"
+msgstr "plugins/xray.koplugin"
 
 msgid "pending_duplicates_prompt"
 msgstr "AI menemukan %d kemungkinan duplikat dari pengambilan terakhir. Tinjau sekarang?"
 
 msgid "plugin_description"
-msgstr "plugin_description"
+msgstr "Ubah pengalaman membaca Anda dengan analisis buku berbasis AI, seperti Amazon Kindle X-Ray!"
 
 msgid "quick_menu_title"
 msgstr "Menu Cepat X-Ray"
 
 msgid "read_more"
-msgstr "read_more"
+msgstr "Baca Selengkapnya"
 
 msgid "reason"
 msgstr "Alasan"
@@ -687,7 +687,7 @@ msgid "review"
 msgstr "Tinjau"
 
 msgid "save"
-msgstr "save"
+msgstr "Simpan"
 
 msgid "search_button"
 msgstr "Cari"
@@ -738,16 +738,16 @@ msgid "spoiler_free_about"
 msgstr "Mode bebas spoiler membatasi ekstraksi AI pada halaman yang telah Anda baca (hingga halaman Anda saat ini), mencegah spoiler dari bab-bab mendatang.\n\nMode Buku Penuh menganalisis seluruh buku, yang mungkin berisi spoiler."
 
 msgid "spoiler_free_menu_option"
-msgstr "spoiler_free_menu_option"
+msgstr "Bebas Spoiler"
 
 msgid "spoiler_free_option"
 msgstr "Mode Bebas Spoiler (Hingga %d%% buku)"
 
 msgid "spoiler_preference_desc"
-msgstr "spoiler_preference_desc"
+msgstr "Pilih preferensi spoiler Anda untuk data X-Ray:"
 
 msgid "spoiler_preference_title"
-msgstr "spoiler_preference_title"
+msgstr "Preferensi Spoiler"
 
 msgid "stop"
 msgstr "Berhenti"
@@ -756,10 +756,10 @@ msgid "term_not_found"
 msgstr "Tidak ada istilah yang cocok dengan '%s'"
 
 msgid "this_chapter"
-msgstr "this_chapter"
+msgstr "Bab Ini"
 
 msgid "this_page"
-msgstr "this_page"
+msgstr "Halaman Ini"
 
 msgid "updater_available_header"
 msgstr "X-Ray %s tersedia!\nAnda memiliki versi %s."
@@ -825,17 +825,17 @@ msgid "updating_ai"
 msgstr "Memperbarui Data X-Ray..."
 
 msgid "val"
-msgstr "val"
+msgstr "???"
 
 msgid "xray_disabled_label"
-msgstr "xray_disabled_label"
+msgstr "Dinonaktifkan"
 
 msgid "xray_enabled_label"
-msgstr "xray_enabled_label"
+msgstr "Diaktifkan"
 
 msgid "xray_mode_desc"
 msgstr "Menambahkan tombol 'X-Ray' ke menu kamus dan pilihan untuk pencarian instan."
 
 msgid "yes"
-msgstr "yes"
+msgstr "Ya"
 

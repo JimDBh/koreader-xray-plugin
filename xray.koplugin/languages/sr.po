@@ -1,0 +1,844 @@
+msgid ""
+msgstr ""
+"Language-Team: Српски\n"
+"Language: sr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "about"
+msgstr "О додатку"
+
+msgid "ai_error"
+msgstr "АИ грешка: "
+
+msgid "ai_fetch_complete"
+msgstr "Успешно преузето са %s!\n\nКњига: %s\nАутор: %s\n\nЛикови: %d\nЛокације: %d\nТеме: %d\nДогађаји на хронологији: %d\nИсторијске личности: %d\n\n%s\n\nРЕЗИМЕ:\n%s"
+
+msgid "ai_fetch_complete_msg"
+msgstr "АИ преузимање завршено!"
+
+msgid "ai_key_required"
+msgstr "Потребан је АИ АПИ кључ."
+
+msgid "ai_merge_confirm_title"
+msgstr "АИ детектовао дупликат"
+
+msgid "ai_merged_n"
+msgstr "Успешно спојено %d парова."
+
+msgid "ai_scanning_duplicates"
+msgstr "АИ скенира дупликате..."
+
+msgid "auto_dupe_check_disabled"
+msgstr "Онемогућено"
+
+msgid "auto_dupe_check_enabled"
+msgstr "Омогућено"
+
+msgid "auto_dupe_check_preference_desc"
+msgstr "Изаберите подешавање за аутоматску АИ детекцију дупликата:"
+
+msgid "auto_dupe_check_setting_desc"
+msgstr "Када је омогућено, X-Ray аутоматски тражи од АИ да провери дупликате ликова и локација након сваког преузимања података. Ако се открију дупликати, бићете упитани да их прегледате и спојите.\n\nОнемогућавање овога ће зауставити све позадинске провере дупликата. И даље можете ручно спојити дупликате преко менија Ликови или Локације.\n\nНапомена: свака провера користи један АИ АПИ позив. Корисници на бесплатним или ограниченим плановима можда желе ово да онемогуће."
+
+msgid "auto_dupe_check_setting_title"
+msgstr "Провера дупликата"
+
+msgid "auto_fetch_page_interval_prompt"
+msgstr "Интервал страница"
+
+msgid "auto_update_aggressive"
+msgstr "Агресивно: проверава свако ново поглавље"
+
+msgid "auto_update_balanced"
+msgstr "Балансирано: проверава највише сваких 5 минута"
+
+msgid "auto_update_disabled"
+msgstr "Онемогућено"
+
+msgid "auto_update_economical"
+msgstr "Економично: проверава највише сваких 15 минута"
+
+msgid "auto_update_freq_about"
+msgstr "Аутоматско ажурирање проверава нове податке о поглављима у позадини док читате.\n\nОГРАНИЧЕЊА И ПЕРФОРМАНСЕ\nЧести позадински захтеви могу брже испразнити БАТЕРИЈУ и могу довести до ОГРАНИЧЕЊА БРОЈА УПИТА код АИ провајдера (посебно за Про моделе).\n\nРЕЖИМИ\n• Ултра: Проверава сваких N страница како подесите (усред поглавља)\n• Агресивно: Проверава сваки пут када уђете у ново поглавље\n• Балансирано: Проверава највише сваких 5 минута (препоручено)\n• Економично: Проверава највише сваких 15 минута\n• Ретко: Проверава највише сваких 30 минута\n• Онемогућено: Без позадинских захтева\n\nНапомена: Ако је поглавље прескочено због ограничења учесталости, X-Ray ће га аутоматски укључити у следеће позадинско преузимање."
+
+msgid "auto_update_freq_label"
+msgstr "Учесталост позадинског преузимања:"
+
+msgid "auto_update_sparse"
+msgstr "Ретко: проверава највише сваких 30 минута"
+
+msgid "auto_update_ultra"
+msgstr "Ултра: проверава сваких %d страница"
+
+msgid "back_to_reading"
+msgstr "Назад на читање"
+
+msgid "beta_channel_desc"
+msgstr "Бета канал вам омогућава да примате претпродукцијске верзије X-Ray додатка. Ове верзије садрже најновије функције и исправке грешака, али могу бити мање стабилне од званичних издања."
+
+msgid "beta_disabled"
+msgstr "Стабилан канал (Препоручено)"
+
+msgid "beta_enabled"
+msgstr "Бета канал омогућен"
+
+msgid "beta_preference_desc"
+msgstr "Изаберите подешавање за канал ажурирања:"
+
+msgid "book_mode_auto"
+msgstr "Аутоматски"
+
+msgid "book_mode_desc"
+msgstr "Изаберите режим за ову књигу."
+
+msgid "book_mode_fiction"
+msgstr "Белетристика"
+
+msgid "book_mode_nonfiction"
+msgstr "Стручна литература"
+
+msgid "book_mode_saved"
+msgstr "Режим књиге сачуван!"
+
+msgid "book_type_about"
+msgstr "Тип књиге одређује која се АИ стратегија екстракције користи и које су функције доступне.\n\n- Белетристика: Фокусира се на наратив, ликове и временску линију заплета.\n- Стручна литература: Фокусира се на термине, концепте и историјске личности.\n\n'Ауто-детекција' ће дозволити АИ-ју да одлучи након првог преузимања."
+
+msgid "book_type_auto"
+msgstr "Ауто-детекција"
+
+msgid "book_type_fiction"
+msgstr "Белетристика"
+
+msgid "book_type_nonfiction"
+msgstr "Стручна литература"
+
+msgid "book_type_saved"
+msgstr "Тип књиге сачуван!"
+
+msgid "cache_cleared"
+msgstr "Кеш је очишћен!\n\nСада можете преузети нове податке:\nМени → X-Ray → Преузми АИ податке"
+
+msgid "cache_save_failed"
+msgstr "Неуспешно чување кеша"
+
+msgid "cache_save_success"
+msgstr "✓ Кеш је ажуриран."
+
+msgid "cache_saved"
+msgstr "Сачувано у кеш!"
+
+msgid "cancel"
+msgstr "Откажи"
+
+msgid "character_not_found"
+msgstr "Није пронађен лик који одговара '%s'"
+
+msgid "close"
+msgstr "Затвори"
+
+msgid "config_api_key_label"
+msgstr "%s АПИ кључ: "
+
+msgid "config_default_gemini"
+msgstr "  Подразумевано (Gemini)"
+
+msgid "config_model"
+msgstr "  Модел: "
+
+msgid "config_provider"
+msgstr "  Провајдер: "
+
+msgid "config_status_not_set"
+msgstr "НИЈЕ ПОДЕШЕН"
+
+msgid "config_status_set"
+msgstr "ПОДЕШЕН"
+
+msgid "current_language"
+msgstr "sr"
+
+msgid "current_mode"
+msgstr "Тренутни: "
+
+msgid "custom_api_endpoint_hint"
+msgstr "нпр., https://openrouter.ai/api/v1/chat/completions"
+
+msgid "custom_api_endpoint_title"
+msgstr "Прилагођени АПИ %d — URL ендпоинта"
+
+msgid "custom_api_is_reasoning"
+msgstr "Модел са резоновањем (нпр. DeepSeek-R1)"
+
+msgid "custom_api_key_title"
+msgstr "Прилагођени АПИ %d — АПИ кључ"
+
+msgid "custom_api_model_hint"
+msgstr "нпр., google/gemini-2.5-flash или openai/gpt-4o"
+
+msgid "custom_api_model_title"
+msgstr "Прилагођени АПИ %d — Подразумевани модел"
+
+msgid "custom_api_name"
+msgstr "Прилагођени АПИ %d (OpenAI компатибилан)"
+
+msgid "custom_api_not_configured"
+msgstr "(није конфигурисано — додирните за подешавање)"
+
+msgid "custom_api_saved"
+msgstr "Конфигурација за прилагођени АПИ %d је сачувана."
+
+msgid "desc_len_about_chars"
+msgstr "ОПИСИ ЛИКОВА\n\n• Кратки (~80 карактера): Име, улога и кратка белешка.\n• Подразумевани (~200 карактера): Стандардна анализа.\n• Детаљни (~350 карактера): Богата анализа лика са особинама и мотивацијама.\n• Веома детаљни (~500 карактера): Дубока анализа.\n\nОДНОС\nДужи описи → мање ликова враћених током почетних/комплетних преузимања. Накнадна покретања 'Преузми више' су без утицаја."
+
+msgid "desc_len_about_hist"
+msgstr "БИОГРАФИЈЕ ИСТОРИЈСКИХ ЛИЧНОСТИ\n\n• Кратки (~50 карактера): Име и примарна улога.\n• Подразумевани (~100 карактера): Стандардна биографија.\n• Детаљни (~200 карактера): Живот, значај и контекст књиге.\n• Веома детаљни (~300 карактера): Свеобухватна биографија.\n\nОДНОС\nДуже биографије → мање историјских личности враћених током почетних преузимања."
+
+msgid "desc_len_about_locs"
+msgstr "ОПИСИ ЛОКАЦИЈА\n\n• Кратки (~50 карактера): Назив места и једнолинијски контекст.\n• Подразумевани (~100 карактера): Стандардни опис.\n• Детаљни (~200 карактера): Атмосфера, значај и догађаји.\n• Веома детаљни (~300 карактера): Пун опис.\n\nОДНОС\nДужи описи → мање локација враћених током почетних преузимања."
+
+msgid "desc_len_about_timeline"
+msgstr "ХРОНОЛОГИЈА — ЈЕДАН ДОГАЂАЈ ПО ПОГЛАВЉУ (увек)\n\nХронологија увек има тачно један унос по поглављу. Ово подешавање утиче само на то колико детаља је укључено у сваки резиме.\n\n• Кратки (~50 карактера): Кратак резиме у једној фрази.\n• Подразумевани (~80 карактера): Стандардни резиме.\n• Детаљни (~150 карактера): Укључује контекст и последице.\n• Веома детаљни (~200 карактера): Пун наративни опис.\n\nНема промене у броју уноса за хронологију."
+
+msgid "desc_len_default"
+msgstr "Подразумевани"
+
+msgid "desc_len_detailed"
+msgstr "Детаљни"
+
+msgid "desc_len_short"
+msgstr "Кратки"
+
+msgid "desc_len_v_detailed"
+msgstr "Веома детаљни"
+
+msgid "dont_ask_again"
+msgstr "Не питај поново"
+
+msgid "entity_label_characters"
+msgstr "ликови"
+
+msgid "entity_label_locations"
+msgstr "локације"
+
+msgid "entity_not_found"
+msgstr "'%s' није пронађен као лик или локација."
+
+msgid "entity_ui_style_both"
+msgstr "Модерни искачући прозор (Оба)"
+
+msgid "entity_ui_style_classic"
+msgstr "Класични дијалог"
+
+msgid "entity_ui_style_desc"
+msgstr "Изаберите када желите да користите нови модерни искачући прозор уместо класичног дијалога за описе ентитета."
+
+msgid "entity_ui_style_in_text"
+msgstr "Модерни искачући прозор (Само у тексту)"
+
+msgid "entity_ui_style_menu"
+msgstr "Модерни искачући прозор (Само у менију)"
+
+msgid "error_api_key_desc"
+msgstr "Прослеђени АПИ кључ је одбијен. Проверите подешавања и уверите се да је кључ исправан."
+
+msgid "error_api_key_title"
+msgstr "Неважећи АПИ кључ"
+
+msgid "error_extract_text"
+msgstr "Грешка: Није могуће издвојити текст књиге."
+
+msgid "error_model_access_desc"
+msgstr "Ваш АПИ кључ нема приступ изабраном моделу. Можда ћете морати да користите други модел или провајдера."
+
+msgid "error_model_access_title"
+msgstr "Приступ одбијен"
+
+msgid "error_model_not_found_desc"
+msgstr "Изабрани АИ модел је недоступан или је URL адреса ендпоинта нетачна."
+
+msgid "error_model_not_found_title"
+msgstr "Модел није пронађен"
+
+msgid "error_no_api_key"
+msgstr "АПИ кључ није подешен"
+
+msgid "error_parse_desc"
+msgstr "АИ је вратио одговор који није могуће обрадити. Ово може бити привремена грешка."
+
+msgid "error_parse_title"
+msgstr "Грешка у подацима"
+
+msgid "error_quota_desc"
+msgstr "Ваш кредит за АПИ је потрошен или сте достигли ограничење брзине. Проверите статус плаћања или сачекајте мало пре поновног покушаја."
+
+msgid "error_quota_title"
+msgstr "Квота прекорачена"
+
+msgid "error_service_down_desc"
+msgstr "АИ сервис је привремено недоступан или преоптерећен. Покушајте поново за неколико минута."
+
+msgid "error_service_down_title"
+msgstr "Сервис недоступан"
+
+msgid "error_timeout_desc"
+msgstr "Захтев је трајао предуго. Ово се може десити код сложених књига или споре интернет везе."
+
+msgid "error_timeout_title"
+msgstr "Веза је истекла"
+
+msgid "error_unknown_desc"
+msgstr "Десила се неочекивана грешка: %s"
+
+msgid "error_unknown_title"
+msgstr "Преузимање неуспело"
+
+msgid "extracting_more_characters"
+msgstr "Издвајање додатних ликова..."
+
+msgid "extracting_more_terms"
+msgstr "Издвајање додатних термина..."
+
+msgid "fetch_button"
+msgstr "Преузми"
+
+msgid "fetch_single_word_prompt"
+msgstr "Нема X-Ray података за '%s'. Желите ли да их потражите?"
+
+msgid "fetch_successful"
+msgstr "Преузимање успешно"
+
+msgid "fetching_ai"
+msgstr "Анализирање књиге за генерисање X-Ray података..."
+
+msgid "fetching_author"
+msgstr "Преузимање информација о аутору са %s..."
+
+msgid "fetching_series_context"
+msgstr "Преузимање контекста серијала: Књига %d од %d…"
+
+msgid "fetching_series_info"
+msgstr "Идентификација књига у серијалу…"
+
+msgid "fetching_wait"
+msgstr "⏳ Молимо сачекајте...\nОвај процес може трајати 10-50 секунди."
+
+msgid "find_mentions"
+msgstr "Пронађи помињања"
+
+msgid "full_book_option"
+msgstr "Режим целе књиге"
+
+msgid "label_aliases"
+msgstr "АЛИЈАСИ"
+
+msgid "label_category"
+msgstr "КАТЕГОРИЈА"
+
+msgid "label_definition"
+msgstr "ДЕФИНИЦИЈА"
+
+msgid "label_description"
+msgstr "ОПИС"
+
+msgid "label_expanded"
+msgstr "ЗНАЧЕЊЕ"
+
+msgid "label_gender"
+msgstr "ПОЛ"
+
+msgid "label_name"
+msgstr "ИМЕ"
+
+msgid "label_occupation"
+msgstr "ЗАНИМАЊЕ"
+
+msgid "label_reasoning"
+msgstr "АИ РЕЗОНОВАЊЕ"
+
+msgid "label_role"
+msgstr "УЛОГА"
+
+msgid "lang_follow_book"
+msgstr "Аутоматски (Прати књигу)"
+
+msgid "lang_follow_system"
+msgstr "Аутоматски (Прати систем)"
+
+msgid "lang_mismatch_title"
+msgstr "Неподударање језика"
+
+msgid "language_changed_reopen"
+msgstr "Језик промењен. Поново отворите мени да бисте видели измене."
+
+msgid "language_name"
+msgstr "Српски"
+
+msgid "later"
+msgstr "Касније"
+
+msgid "linked_entries"
+msgstr "Повезани уноси"
+
+msgid "linked_entries_disabled"
+msgstr "Онемогућено"
+
+msgid "linked_entries_enabled"
+msgstr "Омогућено"
+
+msgid "linked_entries_setting_desc"
+msgstr "Повезани уноси аутоматски повезују ликове, локације и историјске личности када се помињу у описима једни других.\n\nОнемогућавање овога ће сакрити дугме 'Повезани уноси' из дијалога са детаљима."
+
+msgid "logs_cleared"
+msgstr "Дневници очишћени!"
+
+msgid "looking_up_msg"
+msgstr "Тражење '%s'..."
+
+msgid "low_conf_match"
+msgstr "Делимично подударање — приказује се '%s' за ваш упит. Додирните испод да преузмете тачан термин."
+
+msgid "mention_dismiss_btn"
+msgstr "✕"
+
+msgid "mention_return_btn"
+msgstr "Назад на читање"
+
+msgid "mention_return_label"
+msgstr "← Назад на стр.%d"
+
+msgid "mentions_at_location"
+msgstr "Помињање: %s"
+
+msgid "mentions_disabled"
+msgstr "Онемогућено"
+
+msgid "mentions_enabled"
+msgstr "Омогућено"
+
+msgid "mentions_none"
+msgstr "Још нема пронађених помињања за '%s'."
+
+msgid "mentions_preference_desc"
+msgstr "Изаберите своје подешавање за помињање ликова и локација:"
+
+msgid "mentions_refresh"
+msgstr "Освежи помињања"
+
+msgid "mentions_scanning"
+msgstr "Скенирање... %1 од %2 поглавља"
+
+msgid "mentions_setting_desc"
+msgstr "Скенирање помињања вам омогућава да пронађете свако појављивање лика или локације у књизи. Ово се дешава аутоматски у позадини како би читач остао брз.\n\nОнемогућавање овога ће сакрити дугме 'Пронађи помињања'."
+
+msgid "mentions_setting_title"
+msgstr "Подешавања помињања"
+
+msgid "mentions_title"
+msgstr "Помињања: %s"
+
+msgid "menu_about"
+msgstr "О додатку"
+
+msgid "menu_ai_settings"
+msgstr "АИ Подешавања"
+
+msgid "menu_api_keys"
+msgstr "АПИ кључеви и провајдери"
+
+msgid "menu_author_info"
+msgstr "Информације о аутору"
+
+msgid "menu_auto_update_frequency"
+msgstr "Подешавања за аутоматски X-Ray"
+
+msgid "menu_beta_channel"
+msgstr "Подешавања бета канала"
+
+msgid "menu_book_mode"
+msgstr "Тип књиге"
+
+msgid "menu_characters"
+msgstr "Ликови"
+
+msgid "menu_clear_cache"
+msgstr "Очисти кеш"
+
+msgid "menu_clear_logs"
+msgstr "Очисти дневнике"
+
+msgid "menu_config_header"
+msgstr "--- Тренутна конфигурација ---"
+
+msgid "menu_content_fetch_settings"
+msgstr "Подешавања садржаја и преузимања"
+
+msgid "menu_custom_model_title"
+msgstr "Прилагођени %s модел"
+
+msgid "menu_desc_length_settings"
+msgstr "Дужина описа"
+
+msgid "menu_display_ui_settings"
+msgstr "Подешавања приказа и интерфејса"
+
+msgid "menu_enter_custom_model"
+msgstr "Унесите прилагођени модел..."
+
+msgid "menu_entity_ui_mode"
+msgstr "Стил описа ентитета"
+
+msgid "menu_fetch_author"
+msgstr "Преузми информације о аутору (АИ)"
+
+msgid "menu_fetch_more_chars"
+msgstr "Преузми више ликова"
+
+msgid "menu_fetch_more_terms"
+msgstr "Преузми више термина"
+
+msgid "menu_fetch_series_context"
+msgstr "Преузми / Освежи контекст серијала"
+
+msgid "menu_frequency"
+msgstr "Учесталост"
+
+msgid "menu_historical_figures"
+msgstr "Историјске личности"
+
+msgid "menu_language"
+msgstr "Језик"
+
+msgid "menu_linked_entries_settings"
+msgstr "Подешавања повезаних уноса"
+
+msgid "menu_locations"
+msgstr "Локације"
+
+msgid "menu_maintenance"
+msgstr "Одржавање"
+
+msgid "menu_mentions_settings"
+msgstr "Подешавања помињања"
+
+msgid "menu_primary_ai_model"
+msgstr "Примарни АИ модел"
+
+msgid "menu_reasoning_effort"
+msgstr "Напор АИ резоновања"
+
+msgid "menu_secondary_ai_model"
+msgstr "Секундарни АИ модел"
+
+msgid "menu_series_context"
+msgstr "Контекст серијала"
+
+msgid "menu_settings"
+msgstr "Подешавања"
+
+msgid "menu_terms"
+msgstr "Речник"
+
+msgid "menu_timeline"
+msgstr "Хронологија"
+
+msgid "menu_ui_popup_intext"
+msgstr "Користи фуснота-стил за претрагу у тексту"
+
+msgid "menu_ui_popup_menu"
+msgstr "Користи фуснота-стил за претрагу у менију"
+
+msgid "menu_update_xray"
+msgstr "Ажурирај X-Ray податке"
+
+msgid "menu_view_config"
+msgstr "Прикажи све вредности конфигурације"
+
+msgid "menu_xray"
+msgstr "X-Ray"
+
+msgid "menu_xray_mode"
+msgstr "Претрага X-Ray у тексту"
+
+msgid "merge_back"
+msgstr "← Назад"
+
+msgid "merge_button"
+msgstr "Споји"
+
+msgid "merge_confirm"
+msgstr "Спојити %s у %s? Секундарни унос ће бити обрисан, а његови алијаси припојени примарном."
+
+msgid "merge_duplicates"
+msgstr "Споји дупликате..."
+
+msgid "merge_failed"
+msgstr "Спајање неуспело."
+
+msgid "merge_pick_primary"
+msgstr "Изаберите унос који ЖЕЛИТЕ ДА ЗАДРЖИТЕ"
+
+msgid "merge_pick_secondary"
+msgstr "Изаберите унос који ЖЕЛИТЕ ДА УКЛОНИТЕ"
+
+msgid "merge_success"
+msgstr "Уноси су успешно спојени."
+
+msgid "merging_smartly"
+msgstr "Спајање..."
+
+msgid "model_free"
+msgstr "бесплатно"
+
+msgid "model_paid"
+msgstr "плаћено"
+
+msgid "msg_added_characters"
+msgstr "Додато %d нових ликова!"
+
+msgid "msg_added_terms"
+msgstr "Додато %d нових термина!"
+
+msgid "msg_fetch_failed"
+msgstr "АИ преузимање неуспело"
+
+msgid "msg_no_bio"
+msgstr "Нема доступне биографије."
+
+msgid "msg_suggest_lang"
+msgstr "Ова књига је на језику %s. Желите ли да промените X-Ray језик на одговарајући?"
+
+msgid "multiple_matches"
+msgstr "Вишеструка подударања за '%s'. На шта сте мислили?"
+
+msgid "next"
+msgstr "Следеће"
+
+msgid "no"
+msgstr "Не"
+
+msgid "no_api_key"
+msgstr "АИ АПИ кључ није подешен!\n\nУнесите АПИ кључ у:\nМени → X-Ray → АИ Подешавања"
+
+msgid "no_author_data_fetch"
+msgstr "Нема доступних информација о аутору.\n\nЖелите ли да их преузмете помоћу АИ-ја?"
+
+msgid "no_character_data"
+msgstr "Још увек нема података о ликовима.\n\nПрво преузмите X-Ray податке."
+
+msgid "no_data_prompt"
+msgstr "Нису пронађени X-Ray подаци за ову књигу. Желите ли да их преузмете са АИ сада?"
+
+msgid "no_duplicates_found"
+msgstr "Нема пронађених дупликата."
+
+msgid "no_historical_data"
+msgstr "Још увек нема података о историјским личностима.\n\nПрво преузмите X-Ray податке.\n\nАИ ће детектовати стварне историјске\nличности поменуте у књизи."
+
+msgid "no_location_data"
+msgstr "Још увек нема података о локацијама. Прво преузмите X-Ray податке."
+
+msgid "no_merges_performed"
+msgstr "Није извршено ниједно спајање."
+
+msgid "no_terms_data"
+msgstr "Још увек нема података о терминима. Прво преузмите X-Ray податке."
+
+msgid "no_timeline_data"
+msgstr "Још увек нема података о хронологији.\n\nПрво преузмите X-Ray податке.\n\nАИ ће приказати кључне догађаје у\nхронолошком редоследу."
+
+msgid "ok"
+msgstr "У реду"
+
+msgid "path"
+msgstr "plugins/xray.koplugin"
+
+msgid "pending_duplicates_prompt"
+msgstr "АИ је пронашао %d потенцијалних дупликата из претходног преузимања. Прегледати сада?"
+
+msgid "plugin_description"
+msgstr "Трансформишите своје искуство читања помоћу АИ анализе књига, баш као Amazon Kindle X-Ray!"
+
+msgid "quick_menu_title"
+msgstr "Брзи мени за X-Ray"
+
+msgid "read_more"
+msgstr "Прочитај више"
+
+msgid "reason"
+msgstr "Разлог"
+
+msgid "reasoning_about"
+msgstr "Контролише дубину 'размишљања' за моделе са резоновањем:\n\n• Није подешено: Не шаље се посебно упутство; модел користи своје подразумеване вредности.\n• Низак: Брзо, економично издвајање за једноставне књиге.\n• Средњи: Балансирана дубина за већину прича.\n• Висок: Детаљна анализа за сложене мреже ликова.\n\nОдноси се на: GPT-5.x (o1/o3/gpt-5), Claude (sonnet/opus/haiku), и Gemini 2.5+.\n\nНапомена: DeepSeek V4 резонује сам по себи — ово подешавање нема утицаја на њега."
+
+msgid "reasoning_high"
+msgstr "Висок"
+
+msgid "reasoning_low"
+msgstr "Низак"
+
+msgid "reasoning_medium"
+msgstr "Средњи"
+
+msgid "reasoning_unset"
+msgstr "Није подешено (Подразумевано)"
+
+msgid "relookup_button"
+msgstr "Поново потражи '%s'"
+
+msgid "review"
+msgstr "Прегледај"
+
+msgid "save"
+msgstr "Сачувај"
+
+msgid "search_button"
+msgstr "Претражи"
+
+msgid "search_character"
+msgstr "Претрага ликова..."
+
+msgid "search_character_title"
+msgstr "Претрага ликова"
+
+msgid "search_hint"
+msgstr "Унесите име лика"
+
+msgid "search_term"
+msgstr "Претрага термина"
+
+msgid "series_ask_later_msg"
+msgstr "Резиме серијала одложен. Питаћемо вас поново када отворите/наставите ову књигу."
+
+msgid "series_context_enabled_toggle"
+msgstr "Омогући контекст серијала"
+
+msgid "series_context_loaded"
+msgstr "Контекст серијала је учитан (%d претходних књига)."
+
+msgid "series_context_prompt_text"
+msgstr "Изгледа да је ово Књига %d од '%s'. Учитати резиме претходних књига (%d)?\n\n(Ову опцију можете онемогућити у Подешавања → Контекст серијала)"
+
+msgid "series_context_prompt_title"
+msgstr "Детектован серијал"
+
+msgid "series_disabled_msg"
+msgstr "Аутоматски упит је онемогућен за ову књигу. Можете ручно преузети резиме преко X-Ray менија."
+
+msgid "series_no_prior_detected"
+msgstr "Нису детектоване претходне књиге за овај серијал."
+
+msgid "series_prior_books_header"
+msgstr "── Претходне књиге ──"
+
+msgid "series_prior_label"
+msgstr "[Претходно]"
+
+msgid "skip"
+msgstr "Прескочи"
+
+msgid "spoiler_free_about"
+msgstr "Режим без спојлера ограничава издвајање са АИ на странице које сте већ прочитали (до ваше тренутне странице), спречавајући откривање детаља из будућих поглавља.\n\nРежим целе књиге анализира целу књигу, што може садржати спојлере."
+
+msgid "spoiler_free_menu_option"
+msgstr "Без спојлера"
+
+msgid "spoiler_free_option"
+msgstr "Режим без спојлера (До %d%% књиге)"
+
+msgid "spoiler_preference_desc"
+msgstr "Изаберите своје подешавање за спојлере у X-Ray подацима:"
+
+msgid "spoiler_preference_title"
+msgstr "Подешавање спојлера"
+
+msgid "stop"
+msgstr "Заустави"
+
+msgid "term_not_found"
+msgstr "Није пронађен термин који одговара '%s'"
+
+msgid "this_chapter"
+msgstr "Ово поглавље"
+
+msgid "this_page"
+msgstr "Ова страница"
+
+msgid "updater_available_header"
+msgstr "X-Ray %s је доступан!\nИмате верзију %s."
+
+msgid "updater_btn_cancel"
+msgstr "Откажи"
+
+msgid "updater_btn_download"
+msgstr "Преузми и инсталирај"
+
+msgid "updater_btn_later"
+msgstr "Касније"
+
+msgid "updater_btn_open_browser"
+msgstr "Отвори у прегледачу"
+
+msgid "updater_btn_restart"
+msgstr "Рестартуј"
+
+msgid "updater_cancelled_check"
+msgstr "Провера ажурирања отказана."
+
+msgid "updater_cancelled_update"
+msgstr "Ажурирање отказано."
+
+msgid "updater_check"
+msgstr "Провери ажурирања"
+
+msgid "updater_checking"
+msgstr "Проверавање ажурирања..."
+
+msgid "updater_download_prompt"
+msgstr "\n\nПреузети и инсталирати сада?"
+
+msgid "updater_downloading"
+msgstr "Преузимање X-Ray %s..."
+
+msgid "updater_err_download"
+msgstr "Грешка при преузимању: %s"
+
+msgid "updater_err_extract"
+msgstr "Грешка при распакивању: %s"
+
+msgid "updater_error_checking"
+msgstr "Грешка при провери ажурирања."
+
+msgid "updater_error_checking_detail"
+msgstr "Грешка при провери ажурирања: %s"
+
+msgid "updater_no_asset"
+msgstr "Аутоматски фајл за ажурирање није пронађен.\n\nОтворити страницу са издањима на GitHub-у?"
+
+msgid "updater_success_restart"
+msgstr "X-Ray %s је успешно инсталиран.\n\nРестартовати KOReader за примену измена?"
+
+msgid "updater_up_to_date"
+msgstr "X-Ray је ажуран (%s)."
+
+msgid "updater_whats_new"
+msgstr "Шта је ново:"
+
+msgid "updating_ai"
+msgstr "Ажурирање X-Ray података..."
+
+msgid "val"
+msgstr "???"
+
+msgid "xray_disabled_label"
+msgstr "Онемогућено"
+
+msgid "xray_enabled_label"
+msgstr "Омогућено"
+
+msgid "xray_mode_desc"
+msgstr "Додаје дугме 'X-Ray' у речнике и селекционе меније за тренутну претрагу."
+
+msgid "yes"
+msgstr "Да"
+

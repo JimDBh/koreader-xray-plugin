@@ -601,6 +601,7 @@ function M:showLanguageSelection()
         id = "Bahasa Indonesia",
         ar = "العربية",
         it = "Italiano",
+        sr = "Српски",
     }
     
     local langs = self.loc and self.loc.available_languages or { "en", "de", "fr", "ru", "zh_CN", "tr", "pt_br", "es", "uk", "hu" }
@@ -633,7 +634,7 @@ function M:resolveLanguage(code)
             supported[c] = 1
         end
     else
-        supported = { en=1, de=1, fr=1, ru=1, zh_CN=1, tr=1, pt_br=1, es=1, uk=1, hu=1, nl=1, pl=1, id=1, ar=1 }
+        supported = { en=1, de=1, fr=1, ru=1, zh_CN=1, tr=1, pt_br=1, es=1, uk=1, hu=1, nl=1, pl=1, id=1, ar=1, sr=1 }
     end
     
     if code == "auto" or not code then
@@ -746,6 +747,7 @@ function M:checkBookLanguageMatch()
         id = "Bahasa Indonesia",
         ar = "العربية",
         it = "Italiano",
+        sr = "Српски",
     }
     
     local supported = {}
