@@ -86,6 +86,7 @@ describe("AI Reasoning Logic", function()
             
             local mock_settings = { reasoning_effort = "xhigh" }
             -- Mock saveSettings to avoid writing to disk
+            local old_save = AIHelper.saveSettings
             local saved_settings = nil
             AIHelper.saveSettings = function(self, s) 
                 if s then 
@@ -106,6 +107,7 @@ describe("AI Reasoning Logic", function()
             
             -- If xhigh was passed, it would use the default (medium/4096) because it's missing from the map
             assert.are.equal(4096, body.generationConfig.thinkingConfig.thinkingBudget)
+            AIHelper.saveSettings = old_save
         end)
     end)
 end)

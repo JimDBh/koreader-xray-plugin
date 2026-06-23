@@ -2199,15 +2199,27 @@ function M:showAIFindDuplicatesFlow(list, list_name, entity_label)
                         text = self.loc:t("merge_button") or "Merge",
                         callback = function()
                             UIManager:close(confirm_dialog)
-                            local ai_desc = nil
                             local p_desc = primary_item.description or primary_item.biography
                             local s_desc = secondary_item.description or secondary_item.biography
                             if p_desc and s_desc then
-                                ai_desc = self.ai_helper:mergeDescriptionsWithAI(p_desc, s_desc)
+                                local InfoMessage = require("ui/widget/infomessage")
+                                local wait_msg = InfoMessage:new{ text = self.loc:t("merging_smartly") or "Merging...", timeout = 120 }
+                                UIManager:show(wait_msg)
+                                UIManager:scheduleIn(0.1, function()
+                                    if self.destroyed then return end
+                                    if self.ai_helper then self.ai_helper:setTrapWidget(wait_msg) end
+                                    local ai_desc = self.ai_helper:mergeDescriptionsWithAI(p_desc, s_desc)
+                                    if self.ai_helper then self.ai_helper:resetTrapWidget() end
+                                    UIManager:close(wait_msg)
+                                    self:mergeEntries(list, pair.primary, pair.secondary, ai_desc)
+                                    merge_count = merge_count + 1
+                                    processNextPair()
+                                end)
+                            else
+                                self:mergeEntries(list, pair.primary, pair.secondary, nil)
+                                merge_count = merge_count + 1
+                                processNextPair()
                             end
-                            self:mergeEntries(list, pair.primary, pair.secondary, ai_desc)
-                            merge_count = merge_count + 1
-                            processNextPair()
                         end
                     },
                     {
@@ -2272,7 +2284,9 @@ function M:showMergeFlow(list, list_name)
                                         end
                                         
                                         if sec_item and primary_item.description and sec_item.description then
+                                            if self.ai_helper then self.ai_helper:setTrapWidget(wait_msg) end
                                             ai_merged_desc = self.ai_helper:mergeDescriptionsWithAI(primary_item.description, sec_item.description)
+                                            if self.ai_helper then self.ai_helper:resetTrapWidget() end
                                         end
                                     end
                                     
@@ -2423,7 +2437,7 @@ function M:showAutoUpdateSettings()
                         align = btn_align,
                         callback = function()
                             self.auto_fetch_enabled = true
-                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 0, auto_fetch_page_interval = nil })
+                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 0 }, { "auto_fetch_page_interval" })
                             UIManager:nextTick(function() showSettings() end)
                         end
                     }
@@ -2434,7 +2448,7 @@ function M:showAutoUpdateSettings()
                         align = btn_align,
                         callback = function()
                             self.auto_fetch_enabled = true
-                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 300, auto_fetch_page_interval = nil })
+                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 300 }, { "auto_fetch_page_interval" })
                             UIManager:nextTick(function() showSettings() end)
                         end
                     }
@@ -2445,7 +2459,7 @@ function M:showAutoUpdateSettings()
                         align = btn_align,
                         callback = function()
                             self.auto_fetch_enabled = true
-                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 900, auto_fetch_page_interval = nil })
+                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 900 }, { "auto_fetch_page_interval" })
                             UIManager:nextTick(function() showSettings() end)
                         end
                     }
@@ -2456,7 +2470,7 @@ function M:showAutoUpdateSettings()
                         align = btn_align,
                         callback = function()
                             self.auto_fetch_enabled = true
-                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 1800, auto_fetch_page_interval = nil })
+                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = true, auto_fetch_cooldown = 1800 }, { "auto_fetch_page_interval" })
                             UIManager:nextTick(function() showSettings() end)
                         end
                     }
@@ -2467,7 +2481,7 @@ function M:showAutoUpdateSettings()
                         align = btn_align,
                         callback = function()
                             self.auto_fetch_enabled = false
-                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = false, auto_fetch_page_interval = nil })
+                            self.ai_helper:saveSettings({ auto_fetch_on_chapter = false }, { "auto_fetch_page_interval" })
                             UIManager:nextTick(function() showSettings() end)
                         end
                     }
@@ -3696,51 +3710,9 @@ function M:manualFetchSeriesContext()
     end)
 end
 
-function M:checkSeriesContext()
-    self:log("XRayPlugin: Series: checkSeriesContext starting")
-    if self.destroyed then
-        self:log("XRayPlugin: Series: checkSeriesContext: plugin destroyed, skipping")
-        return
-    end
-    if not self.ui or not self.ui.document then
-        self:log("XRayPlugin: Series: checkSeriesContext: document/ui not available, skipping")
-        return
-    end
-
-    if not self.ai_helper or not self.ai_helper.settings or not self.ai_helper.settings.series_context_enabled then
-        self:log("XRayPlugin: Series: checkSeriesContext: series_context_enabled setting is false/nil, skipping")
-        return
-    end
-
-    if self.book_data and (self.book_data.series_context_loaded or self.book_data.series_context_dismissed) then
-        self:log("XRayPlugin: Series: checkSeriesContext: series context is already loaded or dismissed, skipping")
-        return
-    end
-
-    local NetworkMgr = require("ui/network/manager")
-    if not NetworkMgr:isConnected() or not NetworkMgr:isOnline() then
-        self:log("XRayPlugin: Series: checkSeriesContext: device is offline, skipping silently.")
-        return
-    end
-
-    local props = self.ui.document:getProps() or {}
-    local function sanitizeMetadata(val)
-        if type(val) == "string" then return val
-        elseif type(val) == "table" then return table.concat(val, ", ")
-        else return "Unknown" end
-    end
-    local title = sanitizeMetadata(props.title)
-    local author = sanitizeMetadata(props.authors)
-
-    self:log("XRayPlugin: Series: checkSeriesContext: checking book title=" .. tostring(title) .. ", author=" .. tostring(author))
-
-    local series_info = self.series_manager:detectSeries(props, title, author, self.ai_helper)
-    if not series_info or not series_info.name or not series_info.index or series_info.index <= 1 then
-        self:log("XRayPlugin: Series: checkSeriesContext: No series detected or index is <= 1, skipping")
-        return
-    end
-
-    self:log("XRayPlugin: Series: checkSeriesContext: Series detected: " .. series_info.name .. ", index=" .. tostring(series_info.index) .. ". Showing prompt dialog.")
+function M:showSeriesContextPrompt(series_info)
+    if self.destroyed then return end
+    self:log("XRayPlugin: Series: showSeriesContextPrompt: Series detected: " .. series_info.name .. ", index=" .. tostring(series_info.index) .. ". Showing prompt dialog.")
 
     local body_text = self.loc:t(
         "series_context_prompt_text",
@@ -3822,6 +3794,118 @@ function M:checkSeriesContext()
         }
     }
     UIManager:show(confirm)
+end
+
+function M:checkSeriesContext()
+    self:log("XRayPlugin: Series: checkSeriesContext starting")
+    if self.destroyed then
+        self:log("XRayPlugin: Series: checkSeriesContext: plugin destroyed, skipping")
+        return
+    end
+    if not self.ui or not self.ui.document then
+        self:log("XRayPlugin: Series: checkSeriesContext: document/ui not available, skipping")
+        return
+    end
+
+    if not self.ai_helper or not self.ai_helper.settings or not self.ai_helper.settings.series_context_enabled then
+        self:log("XRayPlugin: Series: checkSeriesContext: series_context_enabled setting is false/nil, skipping")
+        return
+    end
+
+    if self.book_data and (self.book_data.series_context_loaded or self.book_data.series_context_dismissed) then
+        self:log("XRayPlugin: Series: checkSeriesContext: series context is already loaded or dismissed, skipping")
+        return
+    end
+
+    local NetworkMgr = require("ui/network/manager")
+    if not NetworkMgr:isConnected() or not NetworkMgr:isOnline() then
+        self:log("XRayPlugin: Series: checkSeriesContext: device is offline, skipping silently.")
+        return
+    end
+
+    local props = self.ui.document:getProps() or {}
+    local function sanitizeMetadata(val)
+        if type(val) == "string" then return val
+        elseif type(val) == "table" then return table.concat(val, ", ")
+        else return "Unknown" end
+    end
+    local title = sanitizeMetadata(props.title)
+    local author = sanitizeMetadata(props.authors)
+
+    self:log("XRayPlugin: Series: checkSeriesContext: checking book title=" .. tostring(title) .. ", author=" .. tostring(author))
+
+    -- 1. Try metadata check first (without AI, passes nil for ai_helper)
+    local series_info = self.series_manager:detectSeries(props, title, author, nil)
+    if series_info and series_info.name and series_info.index and series_info.index > 1 then
+        self:log("XRayPlugin: Series: Metadata check found series: " .. series_info.name .. ", index=" .. tostring(series_info.index))
+        self:showSeriesContextPrompt(series_info)
+        return
+    end
+
+    -- 2. Fallback to AI (performed asynchronously to prevent UI freeze)
+    self:log("XRayPlugin: Series: Metadata check didn't find series. Initiating asynchronous AI check.")
+    local prompt = self.ai_helper:createPrompt(title, author, nil, "series_detect")
+    local req_params = self.ai_helper:buildComprehensiveRequest(nil, nil, nil, prompt)
+    if not req_params then
+        self:log("XRayPlugin: Series: Failed to build AI request for series check")
+        return
+    end
+
+    local DataStorage = require("datastorage")
+    local result_file = DataStorage:getSettingsDir() .. "/xray/bg_series_detect_" .. tostring(os.time()) .. ".json"
+    
+    local started = self.ai_helper:makeRequestAsync(req_params, result_file)
+    if not started then
+        self:log("XRayPlugin: Series: Async check not supported/failed (e.g. on Windows). Skipping automatic AI fallback.")
+        return
+    end
+
+    local poll_count = 0
+    local max_polls = 150 -- 5 minutes at 2s intervals
+    local function pollDetect()
+        if self.destroyed then
+            pcall(function() os.remove(result_file) end)
+            return
+        end
+        if not self.ui or not self.ui.document then
+            pcall(function() os.remove(result_file) end)
+            return
+        end
+        poll_count = poll_count + 1
+        local result, p_err_code, p_err_msg = self.ai_helper:checkAsyncResult(result_file)
+        if result == nil then
+            if poll_count < max_polls then
+                UIManager:scheduleIn(2, pollDetect)
+            else
+                self:log("XRayPlugin: Series: Async series check timed out")
+            end
+        elseif result == false then
+            self:log("XRayPlugin: Series: Async series check failed: " .. tostring(p_err_msg))
+        else
+            -- AI returned a valid result!
+            self:log("XRayPlugin: Series: Async series check result received")
+            if result.is_series then
+                local name = result.series_name
+                local index = tonumber(result.book_index) or 1
+                if name and name ~= "" then
+                    local ai_series_info = {
+                        name = name,
+                        index = index,
+                        slug = self.series_manager:makeSlug(name)
+                    }
+                    self:log("XRayPlugin: Series: Async check detected series=" .. tostring(name) .. ", index=" .. tostring(index))
+                    if index > 1 then
+                        self:showSeriesContextPrompt(ai_series_info)
+                    else
+                        self:log("XRayPlugin: Series: Book is first in series (index=" .. tostring(index) .. "), skipping prompt.")
+                    end
+                end
+            else
+                self:log("XRayPlugin: Series: Async check determined book is not part of a series.")
+            end
+        end
+    end
+    UIManager:scheduleIn(2, pollDetect)
 end
 
 function M:resolveDescriptionForPage(entity, current_page)

@@ -198,4 +198,42 @@ describe("AIHelper", function()
             assert.is_nil(req.headers["x-api-key"])
         end)
     end)
+
+    describe("saveSettings with keys_to_delete", function()
+        it("should update settings and delete specified keys", function()
+            local old_open = io.open
+            local written_content = nil
+            local json = require("json")
+            io.open = function(path, mode)
+                if path:find("settings.json") and mode == "w" then
+                    return {
+                        write = function(self, content)
+                            written_content = content
+                        end,
+                        close = function() end
+                    }
+                end
+                return old_open(path, mode)
+            end
+
+            -- Setup starting settings
+            AIHelper.settings = {
+                keep_me = "value",
+                delete_me = "value2",
+                also_delete_me = "value3"
+            }
+
+            -- Save new settings and delete some keys
+            AIHelper:saveSettings({ new_key = "new_val" }, { "delete_me", "also_delete_me" })
+
+            io.open = old_open
+
+            assert.is_not_nil(written_content)
+            local decoded = json.decode(written_content)
+            assert.are.equal("value", decoded.keep_me)
+            assert.are.equal("new_val", decoded.new_key)
+            assert.is_nil(decoded.delete_me)
+            assert.is_nil(decoded.also_delete_me)
+        end)
+    end)
 end)

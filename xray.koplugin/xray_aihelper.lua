@@ -1136,7 +1136,7 @@ function AIHelper:loadSettings()
     self:loadLanguage()
 end
 
-function AIHelper:saveSettings(new_settings)
+function AIHelper:saveSettings(new_settings, keys_to_delete)
     local DataStorage = require("datastorage")
     local xray_dir = DataStorage:getSettingsDir() .. "/xray"
     local ok, lfs = pcall(require, "libs/libkoreader-lfs")
@@ -1156,6 +1156,11 @@ function AIHelper:saveSettings(new_settings)
     if new_settings then
         for k, v in pairs(new_settings) do
             self.settings[k] = v
+        end
+    end
+    if keys_to_delete then
+        for _, k in ipairs(keys_to_delete) do
+            self.settings[k] = nil
         end
     end
     

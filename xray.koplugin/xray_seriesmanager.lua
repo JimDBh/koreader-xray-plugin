@@ -18,13 +18,17 @@ function SeriesManager:new(o)
     return o
 end
 
-local function makeSlug(name)
+function SeriesManager:makeSlug(name)
     if not name then return "" end
     -- Lowercase and replace non-alphanumeric characters with underscores
     local slug = name:lower():gsub("[%s%p]+", "_")
     -- Strip leading/trailing underscores
     slug = slug:gsub("^_+", ""):gsub("_+$", "")
     return slug
+end
+
+local function makeSlug(name)
+    return SeriesManager:makeSlug(name)
 end
 
 -- Detect if book is part of a series

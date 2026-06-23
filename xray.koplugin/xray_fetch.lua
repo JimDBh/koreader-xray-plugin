@@ -104,7 +104,9 @@ function M:fetchSingleWord(text, pos0, pos1)
                 book_text = book_text
             }
 
+            if wait_msg and self.ai_helper then self.ai_helper:setTrapWidget(wait_msg) end
             local result, error_code, error_msg = self.ai_helper:lookupSingleWord(text, context)
+            if wait_msg and self.ai_helper then self.ai_helper:resetTrapWidget() end
             if wait_msg then UIManager:close(wait_msg) end
 
             if not result then
@@ -1488,7 +1490,9 @@ function M:fetchSeriesContext(is_silent, init_wait_dialog, cancel_ref)
 
     self:log("XRayPlugin: Series: fetchSeriesContext starting for: title=" .. tostring(title) .. ", author=" .. tostring(author))
 
+    if init_wait_dialog and self.ai_helper then self.ai_helper:setTrapWidget(init_wait_dialog) end
     local series_info = self.series_manager:detectSeries(props, title, author, self.ai_helper)
+    if init_wait_dialog and self.ai_helper then self.ai_helper:resetTrapWidget() end
     if cancel_ref and cancel_ref.cancelled then
         self:log("XRayPlugin: Series: fetchSeriesContext cancelled after detectSeries")
         closeInitWait()
@@ -1513,7 +1517,9 @@ function M:fetchSeriesContext(is_silent, init_wait_dialog, cancel_ref)
     local cache_data = self.series_manager:loadSeriesCache(slug) or { books = {} }
     cache_data.books = cache_data.books or {}
 
+    if init_wait_dialog and self.ai_helper then self.ai_helper:setTrapWidget(init_wait_dialog) end
     local prior_books = self.series_manager:getPriorBookList(series_info, author, self.ai_helper)
+    if init_wait_dialog and self.ai_helper then self.ai_helper:resetTrapWidget() end
     if cancel_ref and cancel_ref.cancelled then
         self:log("XRayPlugin: Series: fetchSeriesContext cancelled after getPriorBookList")
         closeInitWait()
