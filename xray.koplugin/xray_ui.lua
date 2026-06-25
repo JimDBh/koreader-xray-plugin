@@ -899,22 +899,24 @@ function M:showCharacters()
     UIManager:scheduleIn(0.3, function()
         if self.destroyed then return end
         if self.pending_duplicate_review and self.pending_duplicate_review.characters and #self.pending_duplicate_review.characters > 0 then
-            local pairs = self.pending_duplicate_review.characters
+            local pairs = self:filterValidDuplicatePairs(self.characters, self.pending_duplicate_review.characters)
             self.pending_duplicate_review.characters = nil
-            local ConfirmBox = require("ui/widget/confirmbox")
-            UIManager:show(ConfirmBox:new{
-                text = string.format(
-                    self.loc:t("pending_duplicates_prompt") or
-                    "AI found %d possible duplicate character(s) from the last fetch. Review now?",
-                    #pairs
-                ),
-                ok_text     = self.loc:t("review") or "Review",
-                cancel_text = self.loc:t("later")  or "Later",
-                ok_callback = function()
-                    self:log("XRayPlugin: User chose to review pending " .. tostring(#pairs) .. " duplicate(s) for characters")
-                    self:walkDuplicatePairs(self.characters, "characters", pairs)
-                end,
-            })
+            if #pairs > 0 then
+                local ConfirmBox = require("ui/widget/confirmbox")
+                UIManager:show(ConfirmBox:new{
+                    text = string.format(
+                        self.loc:t("pending_duplicates_prompt") or
+                        "AI found %d possible duplicate character(s) from the last fetch. Review now?",
+                        #pairs
+                    ),
+                    ok_text     = self.loc:t("review") or "Review",
+                    cancel_text = self.loc:t("later")  or "Later",
+                    ok_callback = function()
+                        self:log("XRayPlugin: User chose to review pending " .. tostring(#pairs) .. " duplicate(s) for characters")
+                        self:walkDuplicatePairs(self.characters, "characters", pairs)
+                    end,
+                })
+            end
         end
     end)
 end
@@ -2038,6 +2040,38 @@ function M:showLinkedEntriesSettings()
     showSettings()
 end
 
+function M:filterValidDuplicatePairs(list, pairs)
+    if not pairs or not list then return {} end
+    if not self.book_data then
+        if not self.cache_manager then
+            self.cache_manager = require(plugin_path .. "xray_cachemanager"):new()
+        end
+        self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
+    end
+    local rejected_pairs = self.book_data.rejected_merge_pairs or {}
+    local filtered = {}
+    for _, pair in ipairs(pairs) do
+        if pair.primary and pair.secondary then
+            local p_name = pair.primary:lower()
+            local s_name = pair.secondary:lower()
+            local key = p_name < s_name and (p_name .. "|" .. s_name) or (s_name .. "|" .. p_name)
+            if not rejected_pairs[key] then
+                local primary_item, secondary_item
+                for _, it in ipairs(list) do
+                    if it.name then
+                        if it.name:lower() == p_name then primary_item = it end
+                        if it.name:lower() == s_name then secondary_item = it end
+                    end
+                end
+                if primary_item and secondary_item then
+                    table.insert(filtered, pair)
+                end
+            end
+        end
+    end
+    return filtered
+end
+
 function M:walkDuplicatePairs(list, list_name, pairs_found)
     local InfoMessage = require("ui/widget/infomessage")
     local ButtonDialog = require("ui/widget/buttondialog")
@@ -2059,31 +2093,7 @@ function M:walkDuplicatePairs(list, list_name, pairs_found)
         self.book_data = self.cache_manager:loadCache(self.ui.document.file) or {}
     end
 
-    local rejected_pairs = self.book_data.rejected_merge_pairs or {}
-    local filtered_pairs = {}
-    for _, pair in ipairs(pairs_found) do
-        if pair.primary and pair.secondary then
-            local p_name = pair.primary:lower()
-            local s_name = pair.secondary:lower()
-            local key = p_name < s_name and (p_name .. "|" .. s_name) or (s_name .. "|" .. p_name)
-            if not rejected_pairs[key] then
-                -- Validate both entries still exist in the current list
-                local primary_item, secondary_item
-                for _, it in ipairs(list) do
-                    if it.name and it.name:lower() == p_name then
-                        primary_item = it
-                    end
-                    if it.name and it.name:lower() == s_name then
-                        secondary_item = it
-                    end
-                end
-                if primary_item and secondary_item then
-                    table.insert(filtered_pairs, pair)
-                end
-            end
-        end
-    end
-    pairs_found = filtered_pairs
+    pairs_found = self:filterValidDuplicatePairs(list, pairs_found)
 
     self:log("XRayPlugin: " .. tostring(#pairs_found) .. " pair(s) remain after filtering rejected/non-existent for " .. tostring(list_name))
 
@@ -2813,22 +2823,24 @@ function M:showLocations()
     UIManager:scheduleIn(0.3, function()
         if self.destroyed then return end
         if self.pending_duplicate_review and self.pending_duplicate_review.locations and #self.pending_duplicate_review.locations > 0 then
-            local pairs = self.pending_duplicate_review.locations
+            local pairs = self:filterValidDuplicatePairs(self.locations, self.pending_duplicate_review.locations)
             self.pending_duplicate_review.locations = nil
-            local ConfirmBox = require("ui/widget/confirmbox")
-            UIManager:show(ConfirmBox:new{
-                text = string.format(
-                    self.loc:t("pending_duplicates_prompt") or
-                    "AI found %d possible duplicate location(s) from the last fetch. Review now?",
-                    #pairs
-                ),
-                ok_text     = self.loc:t("review") or "Review",
-                cancel_text = self.loc:t("later")  or "Later",
-                ok_callback = function()
-                    self:log("XRayPlugin: User chose to review pending " .. tostring(#pairs) .. " duplicate(s) for locations")
-                    self:walkDuplicatePairs(self.locations, "locations", pairs)
-                end,
-            })
+            if #pairs > 0 then
+                local ConfirmBox = require("ui/widget/confirmbox")
+                UIManager:show(ConfirmBox:new{
+                    text = string.format(
+                        self.loc:t("pending_duplicates_prompt") or
+                        "AI found %d possible duplicate location(s) from the last fetch. Review now?",
+                        #pairs
+                    ),
+                    ok_text     = self.loc:t("review") or "Review",
+                    cancel_text = self.loc:t("later")  or "Later",
+                    ok_callback = function()
+                        self:log("XRayPlugin: User chose to review pending " .. tostring(#pairs) .. " duplicate(s) for locations")
+                        self:walkDuplicatePairs(self.locations, "locations", pairs)
+                    end,
+                })
+            end
         end
     end)
 end
