@@ -189,8 +189,19 @@ end
 
 -- Handle the UI part of the lookup, with a disambiguation picker for multiple hits
 function LookupManager:handleLookup(text, pos0, pos1)
-    logger.info("XRayPlugin: handleLookup called for:", text)
     if type(text) ~= "string" or text == "" then return end
+
+    -- Check for unit conversion first
+    local settings = self.plugin.ai_helper and self.plugin.ai_helper.settings or {}
+    if settings.unit_converter_enabled ~= false then
+        local ui_popup_intext = settings.ui_popup_intext
+        if ui_popup_intext == nil then ui_popup_intext = true end
+        if ui_popup_intext then
+            if self.plugin.handleUnitConversionLookup and self.plugin:handleUnitConversionLookup(text) then
+                return
+            end
+        end
+    end
 
     local all = self:lookupAll(text)
 

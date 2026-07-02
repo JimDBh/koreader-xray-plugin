@@ -560,6 +560,12 @@ msgstr "Gunakan Gaya Catatan Kaki untuk Pencarian Dalam Teks"
 msgid "menu_ui_popup_menu"
 msgstr "Gunakan Gaya Catatan Kaki untuk Pencarian Menu"
 
+msgid "menu_unit_categories"
+msgstr "Kategori Satuan"
+
+msgid "menu_unit_converter"
+msgstr "Konverter Satuan"
+
 msgid "menu_update_xray"
 msgstr "Perbarui Data X-Ray (Gabung)"
 
@@ -573,7 +579,7 @@ msgid "menu_xray"
 msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "Pencarian X-Ray Dalam Teks"
+msgstr "Pencarian Dalam Teks"
 
 msgid "merge_back"
 msgstr "← Kembali"
@@ -784,6 +790,24 @@ msgstr "Bab Ini"
 
 msgid "this_page"
 msgstr "Halaman Ini"
+
+msgid "unit_conv_direction"
+msgstr "Arah Konversi"
+
+msgid "unit_conv_direction_auto"
+msgstr "Otomatis (ikuti pengaturan perangkat)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "Selalu konversi ke imperial"
+
+msgid "unit_conv_direction_metric"
+msgstr "Selalu konversi ke metrik"
+
+msgid "unit_conv_enabled"
+msgstr "Aktifkan Konverter Satuan"
+
+msgid "unit_conv_style_settings"
+msgstr "Pengaturan Gaya & Garis Bawah"
 
 msgid "updater_available_header"
 msgstr "X-Ray %s tersedia!\nAnda memiliki versi %s."

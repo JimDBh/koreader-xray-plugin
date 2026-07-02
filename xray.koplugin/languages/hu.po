@@ -27,7 +27,7 @@ msgid "ai_merged_n"
 msgstr "%d pár sikeresen összevonva."
 
 msgid "ai_scan"
-msgstr "AI Scan"
+msgstr "AI-vizsgálat"
 
 msgid "ai_scanning_duplicates"
 msgstr "A MI másolatokat keres..."
@@ -264,7 +264,7 @@ msgid "error_model_not_found_title"
 msgstr "A modell nem található"
 
 msgid "error_no_api_key"
-msgstr "error_no_api_key"
+msgstr "Nincs API-kulcs"
 
 msgid "error_parse_desc"
 msgstr "Az AI olyan választ küldött vissza, amelyet nem lehetett feldolgozni. Ez átmeneti hiba lehet."
@@ -375,7 +375,7 @@ msgid "language_changed_reopen"
 msgstr "A nyelv megváltozott. Nyissa meg újra a menüt a változások megtekintéséhez."
 
 msgid "later"
-msgstr "Later"
+msgstr "Később"
 
 msgid "linked_entries"
 msgstr "Kapcsolódó bejegyzések"
@@ -408,7 +408,7 @@ msgid "low_conf_match"
 msgstr "Részleges egyezés – '%s' megjelenítése a lekérdezésre. Érintse meg alul a pontos kifejezés lekéréséhez."
 
 msgid "manual_pick"
-msgstr "Manual Pick"
+msgstr "Kézi választás"
 
 msgid "mention_dismiss_btn"
 msgstr "✕"
@@ -560,6 +560,12 @@ msgstr "Lábjegyzet stílus használata szövegben történő kereséshez"
 msgid "menu_ui_popup_menu"
 msgstr "Lábjegyzet stílus használata menüben történő kereséshez"
 
+msgid "menu_unit_categories"
+msgstr "Mértékegység-kategóriák"
+
+msgid "menu_unit_converter"
+msgstr "Mértékegység-átváltó"
+
 msgid "menu_update_xray"
 msgstr "X-Ray adatok frissítése"
 
@@ -573,13 +579,13 @@ msgid "menu_xray"
 msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "X-Ray mód beállításai"
+msgstr "Keresés a szövegben"
 
 msgid "merge_back"
 msgstr "← Vissza"
 
 msgid "merge_button"
-msgstr "Merge"
+msgstr "Egyesítés"
 
 msgid "merge_confirm"
 msgstr "Összevonja a következőt: %s a következőbe: %s? A másodlagos bejegyzés törlődik, és az álnevei beolvadnak."
@@ -666,7 +672,7 @@ msgid "ok"
 msgstr "OK"
 
 msgid "pair_rejected"
-msgstr "Pair marked as not a duplicate."
+msgstr "A pár nem duplikátumként lett megjelölve."
 
 msgid "path"
 msgstr "plugins/xray.koplugin"
@@ -681,10 +687,10 @@ msgid "quick_menu_title"
 msgstr "X-Ray gyorsmenü"
 
 msgid "read_more"
-msgstr "Read More"
+msgstr "Bővebben"
 
 msgid "reason"
-msgstr "Reason"
+msgstr "Indok"
 
 msgid "reasoning_about"
 msgstr "Szabályozza a 'gondolkodási' mélységet a következtető modelleknél:\n\n• Nincs beállítva: Nincs küldve specifikus utasítás; a modell a saját alapértelmezéseit használja.\n• Alacsony: Gyors, gazdaságos kinyerés egyszerűbb könyvekhez.\n• Közepes: Kiegyensúlyozott mélység a legtöbb történethez.\n• Magas: Részletes elemzés összetett szereplői kapcsolatokhoz.\n\nÉrvényes a következőkre: GPT-5.x (o1/o3/gpt-5), Claude (sonnet/opus/haiku) és Gemini 2.5+.\n\nMegjegyzés: A DeepSeek V4 eleve következtetést végez — ez a beállítás nincs hatással rá."
@@ -702,13 +708,13 @@ msgid "reasoning_unset"
 msgstr "Nincs beállítva (Alapértelmezett)"
 
 msgid "reject_pair"
-msgstr "Reject"
+msgstr "Elutasítás"
 
 msgid "relookup_button"
 msgstr "Újra keresés erre: '%s'"
 
 msgid "review"
-msgstr "Review"
+msgstr "Ellenőrzés"
 
 msgid "save"
 msgstr "Mentés"
@@ -756,7 +762,7 @@ msgid "series_prior_label"
 msgstr "[Előzmény]"
 
 msgid "skip"
-msgstr "Skip"
+msgstr "Kihagyás"
 
 msgid "spoiler_free_about"
 msgstr "A spoilermentes mód a könyvben már elolvasott oldalakra korlátozza az AI kinyerését (a jelenlegi oldaláig), megakadályozva a jövőbeli fejezetekből származó spoilereket.\n\nA Teljes könyv mód a teljes könyvet elemzi, ami spoilereket tartalmazhat."
@@ -774,7 +780,7 @@ msgid "spoiler_preference_title"
 msgstr "Spoiler-preferencia"
 
 msgid "stop"
-msgstr "Stop"
+msgstr "Leállítás"
 
 msgid "term_not_found"
 msgstr "Nem található kifejezés a következőre: '%s'"
@@ -784,6 +790,24 @@ msgstr "Ez a fejezet"
 
 msgid "this_page"
 msgstr "Ez az oldal"
+
+msgid "unit_conv_direction"
+msgstr "Átváltás iránya"
+
+msgid "unit_conv_direction_auto"
+msgstr "Automatikus (eszközbeállítás szerint)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "Mindig angolszászra"
+
+msgid "unit_conv_direction_metric"
+msgstr "Mindig metrikusra"
+
+msgid "unit_conv_enabled"
+msgstr "Mértékegység-átváltó engedélyezése"
+
+msgid "unit_conv_style_settings"
+msgstr "Stílus és aláhúzás beállításai"
 
 msgid "updater_available_header"
 msgstr "Elérhető az X-Ray %s!\nÖnnek a(z) %s verziója van meg."

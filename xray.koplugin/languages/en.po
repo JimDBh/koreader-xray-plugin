@@ -560,6 +560,12 @@ msgstr "Use Footnote Style for In-text Lookups"
 msgid "menu_ui_popup_menu"
 msgstr "Use Footnote Style for Menu Lookups"
 
+msgid "menu_unit_categories"
+msgstr "Unit Categories"
+
+msgid "menu_unit_converter"
+msgstr "Unit Converter"
+
 msgid "menu_update_xray"
 msgstr "Update X-Ray Data"
 
@@ -573,7 +579,7 @@ msgid "menu_xray"
 msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "In-text X-Ray Lookups"
+msgstr "In-text Lookups"
 
 msgid "merge_back"
 msgstr "← Back"
@@ -784,6 +790,24 @@ msgstr "This Chapter"
 
 msgid "this_page"
 msgstr "This Page"
+
+msgid "unit_conv_direction"
+msgstr "Conversion Direction"
+
+msgid "unit_conv_direction_auto"
+msgstr "Auto (follow device setting)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "Always convert to imperial"
+
+msgid "unit_conv_direction_metric"
+msgstr "Always convert to metric"
+
+msgid "unit_conv_enabled"
+msgstr "Enable Unit Converter"
+
+msgid "unit_conv_style_settings"
+msgstr "Style & Underline Settings"
 
 msgid "updater_available_header"
 msgstr "X-Ray %s is available!\nYou have %s."

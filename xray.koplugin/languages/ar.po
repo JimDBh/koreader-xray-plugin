@@ -27,7 +27,7 @@ msgid "ai_merged_n"
 msgstr "تم دمج %d زوج (أزواج) بنجاح."
 
 msgid "ai_scan"
-msgstr "AI Scan"
+msgstr "فحص بالذكاء الاصطناعي"
 
 msgid "ai_scanning_duplicates"
 msgstr "يقوم الذكاء الاصطناعي بالبحث عن التكرارات..."
@@ -408,7 +408,7 @@ msgid "low_conf_match"
 msgstr "تطابق جزئي — يظهر '%s' لاستعلامك. انقر أدناه لجلب المصطلح الدقيق."
 
 msgid "manual_pick"
-msgstr "Manual Pick"
+msgstr "اختيار يدوي"
 
 msgid "mention_dismiss_btn"
 msgstr "✕"
@@ -560,6 +560,12 @@ msgstr "استخدام نمط الحاشية السفلية للبحث في ال
 msgid "menu_ui_popup_menu"
 msgstr "استخدام نمط الحاشية السفلية للبحث في القائمة"
 
+msgid "menu_unit_categories"
+msgstr "فئات الوحدات"
+
+msgid "menu_unit_converter"
+msgstr "محول الوحدات"
+
 msgid "menu_update_xray"
 msgstr "تحديث بيانات X-Ray"
 
@@ -570,10 +576,10 @@ msgid "menu_view_log"
 msgstr "عرض السجل"
 
 msgid "menu_xray"
-msgstr "X-Ray"
+msgstr "إكس راي"
 
 msgid "menu_xray_mode"
-msgstr "البحث عن X-Ray في النص"
+msgstr "البحث في النص"
 
 msgid "merge_back"
 msgstr "← رجوع"
@@ -666,7 +672,7 @@ msgid "ok"
 msgstr "موافق"
 
 msgid "pair_rejected"
-msgstr "Pair marked as not a duplicate."
+msgstr "تم تحديد الزوج على أنه ليس مكررًا."
 
 msgid "path"
 msgstr "plugins/xray.koplugin"
@@ -702,7 +708,7 @@ msgid "reasoning_unset"
 msgstr "غير معين (الافتراضي)"
 
 msgid "reject_pair"
-msgstr "Reject"
+msgstr "رفض"
 
 msgid "relookup_button"
 msgstr "إعادة البحث عن '%s'"
@@ -762,10 +768,10 @@ msgid "spoiler_free_about"
 msgstr "يحد وضع Spoiler-free (خالٍ من الحرق) من استخراج الذكاء الاصطناعي إلى الصفحات التي قرأتها بالفعل (حتى صفحتك الحالية)، مما يمنع حرق الأحداث من الفصول المستقبلية.\n\nيقوم وضع الكتاب الكامل بتحليل الكتاب بأكمله، والذي قد يحتوي على حرق للأحداث."
 
 msgid "spoiler_free_menu_option"
-msgstr "Spoiler-free"
+msgstr "بدون حرق"
 
 msgid "spoiler_free_option"
-msgstr "Spoiler-free Mode (Up to %d%% of the book)"
+msgstr "وضع بدون حرق (حتى %d%% من الكتاب)"
 
 msgid "spoiler_preference_desc"
 msgstr "حدد تفضيل حرق الأحداث لبيانات X-Ray:"
@@ -784,6 +790,24 @@ msgstr "هذا الفصل"
 
 msgid "this_page"
 msgstr "هذه الصفحة"
+
+msgid "unit_conv_direction"
+msgstr "اتجاه التحويل"
+
+msgid "unit_conv_direction_auto"
+msgstr "تلقائي (حسب إعدادات الجهاز)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "التحويل دائماً إلى الإمبراطوري"
+
+msgid "unit_conv_direction_metric"
+msgstr "التحويل دائماً إلى المتري"
+
+msgid "unit_conv_enabled"
+msgstr "تمكين محول الوحدات"
+
+msgid "unit_conv_style_settings"
+msgstr "إعدادات النمط والتسطير"
 
 msgid "updater_available_header"
 msgstr "يتوفر إصدار X-Ray %s الجديد!\nلديك حاليًا الإصدار %s."

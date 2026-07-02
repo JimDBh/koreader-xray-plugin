@@ -560,6 +560,12 @@ msgstr "Styl przypisu dla wyszukiwania w tekście"
 msgid "menu_ui_popup_menu"
 msgstr "Styl przypisu dla wyszukiwania w menu"
 
+msgid "menu_unit_categories"
+msgstr "Kategorie jednostek"
+
+msgid "menu_unit_converter"
+msgstr "Konwerter jednostek"
+
 msgid "menu_update_xray"
 msgstr "Aktualizuj dane X-Ray"
 
@@ -573,7 +579,7 @@ msgid "menu_xray"
 msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "Ustawienia trybu X-Ray"
+msgstr "Wyszukiwanie w tekście"
 
 msgid "merge_back"
 msgstr "← Wróć"
@@ -784,6 +790,24 @@ msgstr "Ten rozdział"
 
 msgid "this_page"
 msgstr "Ta strona"
+
+msgid "unit_conv_direction"
+msgstr "Kierunek konwersji"
+
+msgid "unit_conv_direction_auto"
+msgstr "Auto (zgodnie z ust. urządzenia)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "Zawsze konwertuj na imperialne"
+
+msgid "unit_conv_direction_metric"
+msgstr "Zawsze konwertuj na metryczne"
+
+msgid "unit_conv_enabled"
+msgstr "Włącz konwerter jednostek"
+
+msgid "unit_conv_style_settings"
+msgstr "Ustawienia stylu i podkreślenia"
 
 msgid "updater_available_header"
 msgstr "Dostępna jest wersja X-Ray %s!\nPosiadasz wersję %s."

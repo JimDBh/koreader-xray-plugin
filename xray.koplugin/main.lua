@@ -45,6 +45,7 @@ safeRequireMixin("xray_data")
 safeRequireMixin("xray_ui")
 safeRequireMixin("xray_fetch")
 safeRequireMixin("xray_mentions")
+safeRequireMixin("xray_unitscanner")
 
 
 function XRayPlugin:init()
@@ -196,7 +197,6 @@ function XRayPlugin:init()
             end)
         end
 
-        -- Register X-Ray button with new KOReader dict API (PR #15184+)
         -- Safe no-op on older versions where addToDictButtons doesn't exist.
         if self.ui and self.ui.dictionary
                 and type(self.ui.dictionary.addToDictButtons) == "function" then
@@ -312,6 +312,16 @@ function XRayPlugin:onReaderReady()
     self.last_bg_fetch_page = nil
     self.chapters_fetched = {}
     self.bg_fetch_pending = false
+
+    -- Initial unit scanner run
+    UIManager:scheduleIn(1.5, function()
+        if self.destroyed then return end
+        if self.mountUnderlineOverlay then self:mountUnderlineOverlay() end
+        if self.mountTapHandler then self:mountTapHandler() end
+        if self.scanBookForUnits then
+            self:scanBookForUnits()
+        end
+    end)
 
     -- Initialize language based on logic (auto, book, or manual)
     self:applyLanguageLogic()
@@ -674,10 +684,14 @@ function XRayPlugin:autoLoadCache()
             restoreOrder(self.characters)
             restoreOrder(self.historical_figures)
             
-            -- Stage 3: Repair Page Numbers & Deduplicate (Deferred another 500ms)
-            UIManager:scheduleIn(500, function()
-                if self.destroyed then return end
-                if not self.ui or not self.ui.document then return end
+            -- Wait a tick for the dictionary popup to close gracefully, then trigger X-Ray
+            UIManager:scheduleIn(0.1, function()
+                if self.ui and self.ui.dictionary and self.ui.dictionary.dict_window then
+                    -- Trigger dictionary close safely
+                    pcall(function()
+                        self.ui.dictionary.dict_window:onClose()
+                    end)
+                end
                 self:log("XRayPlugin: Stage 3 - Repairing pages and deduplicating")
                 local toc = self.ui.document:getToc()
                 self:assignTimelinePages(self.timeline, toc, false)
@@ -876,6 +890,138 @@ function XRayPlugin:getSubMenuItems()
                 text = self.loc:t("menu_xray_mode"),
                 keep_menu_open = true,
                 callback = function() self:toggleXRayMode() end,
+            },
+            {
+                text = self.loc:t("menu_unit_converter") or "Unit Converter",
+                keep_menu_open = true,
+                sub_item_table = {
+                    {
+                        text = self.loc:t("unit_conv_enabled") or "Enable Unit Converter",
+                        checked_func = function()
+                            return self.ai_helper.settings.unit_converter_enabled ~= false
+                        end,
+                        callback = function()
+                            local current = self.ai_helper.settings.unit_converter_enabled ~= false
+                            self.ai_helper:saveSettings({ unit_converter_enabled = not current })
+                            if self.scanBookForUnits then self:scanBookForUnits() end
+                        end
+                    },
+                    {
+                        text = self.loc:t("unit_conv_direction") or "Conversion Direction",
+                        keep_menu_open = true,
+                        sub_item_table = {
+                            {
+                                text = self.loc:t("unit_conv_direction_auto") or "Auto (Follow Device)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_conversion_direction == "auto" or self.ai_helper.settings.unit_conversion_direction == nil
+                                end,
+                                callback = function()
+                                    self.ai_helper:saveSettings({ unit_conversion_direction = "auto" })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = self.loc:t("unit_conv_direction_metric") or "To Metric",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_conversion_direction == "to_metric"
+                                end,
+                                callback = function()
+                                    self.ai_helper:saveSettings({ unit_conversion_direction = "to_metric" })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = self.loc:t("unit_conv_direction_imperial") or "To Imperial",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_conversion_direction == "to_imperial"
+                                end,
+                                callback = function()
+                                    self.ai_helper:saveSettings({ unit_conversion_direction = "to_imperial" })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            }
+                        }
+                    },
+                    {
+                        text = self.loc:t("menu_unit_categories") or "Unit Categories",
+                        keep_menu_open = true,
+                        sub_item_table = {
+                            {
+                                text = "Length (mile, feet, inch, m, km...)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_cat_length ~= false
+                                end,
+                                callback = function()
+                                    local curr = self.ai_helper.settings.unit_cat_length ~= false
+                                    self.ai_helper:saveSettings({ unit_cat_length = not curr })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = "Weight / Mass (pound, ounce, kg, g...)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_cat_weight ~= false
+                                end,
+                                callback = function()
+                                    local curr = self.ai_helper.settings.unit_cat_weight ~= false
+                                    self.ai_helper:saveSettings({ unit_cat_weight = not curr })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = "Temperature (fahrenheit, celsius)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_cat_temp ~= false
+                                end,
+                                callback = function()
+                                    local curr = self.ai_helper.settings.unit_cat_temp ~= false
+                                    self.ai_helper:saveSettings({ unit_cat_temp = not curr })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = "Volume (gallon, cup, liter, ml...)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_cat_volume ~= false
+                                end,
+                                callback = function()
+                                    local curr = self.ai_helper.settings.unit_cat_volume ~= false
+                                    self.ai_helper:saveSettings({ unit_cat_volume = not curr })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = "Speed (mph, km/h)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_cat_speed ~= false
+                                end,
+                                callback = function()
+                                    local curr = self.ai_helper.settings.unit_cat_speed ~= false
+                                    self.ai_helper:saveSettings({ unit_cat_speed = not curr })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            },
+                            {
+                                text = "Area (acre, hectare, m², sq ft...)",
+                                checked_func = function()
+                                    return self.ai_helper.settings.unit_cat_area ~= false
+                                end,
+                                callback = function()
+                                    local curr = self.ai_helper.settings.unit_cat_area ~= false
+                                    self.ai_helper:saveSettings({ unit_cat_area = not curr })
+                                    if self.scanBookForUnits then self:scanBookForUnits() end
+                                end
+                            }
+                        }
+                    },
+                    {
+                        text = self.loc:t("unit_conv_style_settings") or "Style & Underline Settings",
+                        keep_menu_open = true,
+                        callback = function()
+                            self:showUnitStyleCard()
+                        end
+                    }
+                },
                 separator = true,
             },
             {
@@ -976,6 +1122,375 @@ function XRayPlugin:addToMainMenu(menu_items)
         sub_item_table_func = function() return self:getSubMenuItems() end,
     }
 end
+
+-- Extracted functions are now loaded via mixins (xray_data, xray_ui, xray_fetch, xray_mentions)
+
+function XRayPlugin:showUnitStyleCard()
+    local Screen = require("device").screen
+    local Font = require("ui/font")
+    local Geom = require("ui/geometry")
+    local Blitbuffer = require("ffi/blitbuffer")
+    local UIManager = require("ui/uimanager")
+    local FrameContainer = require("ui/widget/container/framecontainer")
+    local InputContainer = require("ui/widget/container/inputcontainer")
+    local CenterContainer = require("ui/widget/container/centercontainer")
+    local VerticalGroup = require("ui/widget/verticalgroup")
+    local HorizontalGroup = require("ui/widget/horizontalgroup")
+    local TextWidget = require("ui/widget/textwidget")
+    local Button = require("ui/widget/button")
+    local CheckButton = require("ui/widget/checkbutton")
+    local MovableContainer = require("ui/widget/container/movablecontainer")
+    local GestureRange = require("ui/gesturerange")
+    local VerticalSpan = require("ui/widget/verticalspan")
+    local WidgetContainer = require("ui/widget/container/widgetcontainer")
+    local RenderText = require("ui/rendertext")
+    local OverlapGroup = require("ui/widget/overlapgroup")
+    local LineWidget = require("ui/widget/linewidget")
+    local Widget = require("ui/widget/widget")
+
+    local function sc(val)
+        return Screen:scaleBySize(val)
+    end
+
+    local sw = Screen:getWidth()
+    local sh = Screen:getHeight()
+    local dialog_w = math.min(sw - sc(40), sc(340))
+
+    local overlay
+    local refresh
+
+    refresh = function()
+        if overlay then
+            UIManager:close(overlay, "ui")
+        end
+
+        local settings = self.ai_helper.settings or {}
+        local underline_style = settings.unit_underline_style or "solid"
+        local underline_thickness = tonumber(settings.unit_underline_thickness) or 2
+        local underline_intensity = settings.unit_underline_intensity or "medium"
+        local tooltip_timeout = tonumber(settings.unit_tooltip_timeout) or 4
+
+        local function saveSetting(key, val)
+            self.ai_helper:saveSettings({ [key] = val })
+            local is_visual = (key == "unit_underline_style" or key == "unit_underline_thickness" or key == "unit_underline_intensity" or key == "unit_tooltip_timeout")
+            if not is_visual then
+                if self.scanBookForUnits then self:scanBookForUnits() end
+            else
+                if self.ui and self.ui.view and self.ui.view.dialog then
+                    UIManager:setDirty(self.ui.view.dialog, "ui")
+                end
+            end
+            refresh()
+        end
+
+        local function option_row(options, current, key)
+            local row = { align = "center" }
+            for i, opt in ipairs(options) do
+                if i > 1 then
+                    table.insert(row, WidgetContainer:new{ dimen = Geom:new{ w = sc(12), h = 1 } })
+                end
+                local value = opt.value
+                local is_selected = (value == current)
+                local dot_char = is_selected and "●" or "○"
+                
+                local frame = FrameContainer:new{
+                    bordersize = is_selected and 1 or 0,
+                    radius = sc(4),
+                    padding = sc(4),
+                    color = Blitbuffer.COLOR_GRAY_B,
+                    HorizontalGroup:new{
+                        align = "center",
+                        TextWidget:new{ text = dot_char, face = Font:getFace("cfont", 16) },
+                        WidgetContainer:new{ dimen = Geom:new{ w = sc(4), h = 1 } },
+                        TextWidget:new{ text = opt.text, face = Font:getFace("cfont", 16) },
+                    }
+                }
+                local item = InputContainer:new{ frame }
+                item.ges_events = {
+                    Tap = {
+                        GestureRange:new{
+                            ges = "tap",
+                            range = function() return frame.dimen end
+                        }
+                    }
+                }
+                item.onTap = function()
+                    saveSetting(key, value)
+                    return true
+                end
+                table.insert(row, item)
+            end
+            return HorizontalGroup:new(row)
+        end
+
+        local UnderlinePreview = Widget:extend{
+            width = 0,
+            height = 0,
+            underline_style = underline_style,
+            underline_thickness = underline_thickness,
+            underline_color_val = nil,
+        }
+        function UnderlinePreview:getSize()
+            return Geom:new{ w = self.width, h = self.height }
+        end
+        function UnderlinePreview:paintTo(bb, x, y)
+            local y_line = y + self.height - self.underline_thickness
+            if self.underline_style == "wavy" then
+                for offset = 0, self.width - 1, 2 do
+                    local wave_y = y_line + (math.floor(offset / 2) % 2 == 0 and 0 or 1)
+                    local segment_w = math.min(2, self.width - offset)
+                    bb:paintRect(x + offset, wave_y, segment_w, self.underline_thickness, self.underline_color_val)
+                end
+            else
+                bb:paintRect(x, y_line, self.width, self.underline_thickness, self.underline_color_val)
+            end
+        end
+
+        local face = Font:getFace("cfont", 18)
+        local sample_text = TextWidget:new{
+            text = "walked 2 miles today",
+            face = face,
+            alignment = "center",
+        }
+        local sample_size = sample_text:getSize()
+
+        local underline_color_val
+        if underline_intensity == "light" then
+            underline_color_val = Blitbuffer.Color8(200)
+        elseif underline_intensity == "dark" then
+            underline_color_val = Blitbuffer.Color8(30)
+        else
+            underline_color_val = Blitbuffer.Color8(120)
+        end
+
+        local w_walked = RenderText:sizeUtf8Text(0, 9999, face, "walked ", false, false).x
+        local w_miles = RenderText:sizeUtf8Text(0, 9999, face, "2 miles", false, false).x
+
+        local underline_widget = UnderlinePreview:new{
+            width = w_miles,
+            height = sample_size.h,
+            underline_style = underline_style,
+            underline_thickness = underline_thickness,
+            underline_color_val = underline_color_val,
+            overlap_offset = { w_walked, 0 },
+        }
+
+        local preview_example = OverlapGroup:new{
+            dimen = sample_size,
+            sample_text,
+            underline_widget,
+        }
+
+        local TextBoxWidget = require("ui/widget/textboxwidget")
+        local tooltip_text = "3.22 km"
+
+        local fs = 20
+        if G_reader_settings then
+            fs = G_reader_settings:readSetting("cre_font_size") or 20
+        end
+        local tooltip_face = Font:getFace("cfont", fs)
+        local pad_h = 28
+        local pad_v = math.floor(fs * 0.55)
+        local text_size = RenderText:sizeUtf8Text(0, 9999, tooltip_face, tooltip_text, false, false)
+        local text_w = text_size.x
+        local text_h = text_size.y_top + text_size.y_bottom
+        local tooltip_max_w = dialog_w - sc(64)
+        local popup_w = math.min(tooltip_max_w, text_w + pad_h * 2)
+        local card_h = pad_v * 2 + text_h + 2
+
+        local tb = TextBoxWidget:new{
+            text = tooltip_text,
+            face = tooltip_face,
+            width = popup_w - pad_h * 2,
+            alignment = "center",
+        }
+
+        local border_sz = sc(2)
+        local preview_tooltip = FrameContainer:new{
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = border_sz,
+            color = Blitbuffer.COLOR_DARK_GRAY,
+            radius = 0,
+            padding_top = pad_v,
+            padding_bottom = pad_v,
+            padding_left = pad_h,
+            padding_right = pad_h,
+            width = popup_w,
+            height = card_h,
+            VerticalGroup:new{
+                align = "center",
+                tb
+            }
+        }
+
+        local arrow_w = sc(16)
+        local arrow_h = sc(8)
+        local _PointerArrow = self._PointerArrow
+        local preview_arrow = _PointerArrow:new{
+            width = arrow_w,
+            height = arrow_h,
+            direction = "down",
+            apex_offset = arrow_w / 2,
+            border_size = border_sz,
+            border_color = Blitbuffer.COLOR_DARK_GRAY,
+            fill_color = Blitbuffer.COLOR_WHITE,
+        }
+        preview_arrow.overlap_offset = { math.floor((popup_w - arrow_w) / 2), card_h - border_sz }
+
+        local tooltip_with_arrow = OverlapGroup:new{
+            dimen = Geom:new{ w = popup_w, h = card_h + arrow_h - border_sz },
+            preview_tooltip,
+            preview_arrow,
+        }
+
+        local preview_panel = FrameContainer:new{
+            padding = sc(8),
+            radius = sc(6),
+            bordersize = 1,
+            color = Blitbuffer.COLOR_GRAY_B,
+            background = Blitbuffer.COLOR_WHITE,
+            width = dialog_w - sc(32),
+            VerticalGroup:new{
+                align = "center",
+                HorizontalGroup:new{
+                    align = "center",
+                    tooltip_with_arrow
+                },
+                VerticalSpan:new{ width = sc(2) },
+                CenterContainer:new{
+                    dimen = Geom:new{ w = dialog_w - sc(48), h = sample_size.h },
+                    preview_example
+                }
+            }
+        }
+
+        local title_label = TextWidget:new{
+            text = "STYLE PREVIEW",
+            face = Font:getFace("infofont", 11),
+            fgcolor = Blitbuffer.Color8(120),
+        }
+
+        local style_row = option_row({
+            { text = "Solid", value = "solid" },
+            { text = "Wavy", value = "wavy" }
+        }, underline_style, "unit_underline_style")
+
+        local thickness_row = option_row({
+            { text = "1px", value = 1 },
+            { text = "2px", value = 2 },
+            { text = "3px", value = 3 }
+        }, underline_thickness, "unit_underline_thickness")
+
+        local intensity_row = option_row({
+            { text = "Light", value = "light" },
+            { text = "Medium", value = "medium" },
+            { text = "Dark", value = "dark" }
+        }, underline_intensity, "unit_underline_intensity")
+
+        local timeout_row = option_row({
+            { text = "2s", value = 2 },
+            { text = "4s", value = 4 },
+            { text = "8s", value = 8 },
+            { text = "Never", value = 0 }
+        }, tooltip_timeout, "unit_tooltip_timeout")
+
+        local function span()
+            return VerticalSpan:new{ width = sc(8) }
+        end
+        local function divider()
+            return FrameContainer:new{
+                bordersize = 0,
+                padding = 0,
+                margin = 0,
+                background = Blitbuffer.COLOR_GRAY_B,
+                VerticalSpan:new{ width = sc(1) }
+            }
+        end
+
+        local function label(text)
+            return TextWidget:new{
+                text = text,
+                face = Font:getFace("cfont", 15),
+                alignment = "left",
+            }
+        end
+
+        local close_btn = Button:new{
+            text = "Close",
+            width = dialog_w - sc(32),
+            height = sc(32),
+            callback = function()
+                self._styling_offset = nil
+                UIManager:close(overlay, "ui")
+            end
+        }
+
+        local card = FrameContainer:new{
+            padding = sc(12),
+            radius = sc(10),
+            bordersize = 2,
+            color = Blitbuffer.COLOR_GRAY_D,
+            background = Blitbuffer.COLOR_WHITE,
+            width = dialog_w,
+            VerticalGroup:new{
+                align = "left",
+                title_label,
+                span(),
+                preview_panel,
+                span(),
+                label("Underline Style"),
+                style_row,
+                span(),
+                label("Underline Thickness"),
+                thickness_row,
+                span(),
+                label("Underline Intensity"),
+                intensity_row,
+                span(),
+                label("Tooltip Timeout"),
+                timeout_row,
+                span(),
+                divider(),
+                span(),
+                close_btn,
+            }
+        }
+
+        local movable = MovableContainer:new{ card }
+        if self._styling_offset then
+            movable:setMovedOffset(self._styling_offset)
+        end
+
+        local orig_handleEvent = movable.handleEvent
+        movable.handleEvent = function(this, ev)
+            local res = orig_handleEvent(this, ev)
+            if ev.type == "Gesture" or ev.type == "Pan" or ev.type == "Hold" then
+                self._styling_offset = this.moved_offset
+            end
+            return res
+        end
+
+        overlay = InputContainer:new{
+            key_events = {
+                Close = { { "Back" } }
+            },
+            CenterContainer:new{
+                dimen = Geom:new{ w = sw, h = sh },
+                movable
+            }
+        }
+        function overlay:onClose()
+            self._styling_offset = nil
+            UIManager:close(overlay, "ui")
+            return true
+        end
+
+        UIManager:show(overlay, "ui")
+    end
+
+    refresh()
+end
+
 
 
 -- Extracted functions are now loaded via mixins (xray_data, xray_ui, xray_fetch, xray_mentions)

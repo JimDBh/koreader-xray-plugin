@@ -22,6 +22,7 @@ end
 
 local _ = gettext
 local plugin_path = ((...) or ""):match("(.-)[^%.]+$") or ""
+local xray_units = require(plugin_path .. "xray_units")
 
 local M = {}
 
@@ -267,7 +268,7 @@ function XRayBottomPopup:init()
     end
 
     -- B. Linked Entries button
-    if #related > 0 then
+    if #related > 0 and not e.is_conversion then
         local left_btn = make_btn(get_loc_t("linked_entries", "Linked Entries"), function()
             UIManager:close(self)
             if plugin and plugin.showRelatedEntities then
@@ -278,7 +279,7 @@ function XRayBottomPopup:init()
     end
 
     -- C. Find Mentions button
-    if mentions_enabled and not e.is_timeline then
+    if mentions_enabled and not e.is_timeline and not e.is_conversion then
         local right_btn = make_btn(get_loc_t("find_mentions", "Find Mentions"), function()
             UIManager:close(self)
             if plugin then
@@ -4570,6 +4571,37 @@ function M:resolveDescriptionForPage(entity, current_page)
     end
     
     return entity[desc_key] or "---"
+end
+
+function M:handleUnitConversionLookup(text)
+    local settings = self.ai_helper and self.ai_helper.settings or {}
+    local direction = settings.unit_conversion_direction or "auto"
+    if direction == "auto" then
+        direction = xray_units.getDefaultDirection()
+    end
+    local enabled_cats = {
+        length = settings.unit_cat_length ~= false,
+        weight = settings.unit_cat_weight ~= false,
+        temp = settings.unit_cat_temp ~= false,
+        volume = settings.unit_cat_volume ~= false,
+        speed = settings.unit_cat_speed ~= false,
+        area = settings.unit_cat_area ~= false,
+    }
+    local lang = self.loc and self.loc:getLanguage() or "en"
+    local matches = xray_units.detectMeasurements(text, direction, enabled_cats, lang)
+    if matches and #matches > 0 then
+        local match = matches[1]
+        local entity = {
+            name = match.original,
+            description = match.original .. " = " .. match.converted,
+            category = "Unit Conversion",
+            role = match.category:upper(),
+            is_conversion = true
+        }
+        showBottomPopup(self, entity)
+        return true
+    end
+    return false
 end
 
 return M

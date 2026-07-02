@@ -560,6 +560,12 @@ msgstr "Користи фуснота-стил за претрагу у текс
 msgid "menu_ui_popup_menu"
 msgstr "Користи фуснота-стил за претрагу у менију"
 
+msgid "menu_unit_categories"
+msgstr "Категорије јединица"
+
+msgid "menu_unit_converter"
+msgstr "Претварач јединица"
+
 msgid "menu_update_xray"
 msgstr "Ажурирај X-Ray податке"
 
@@ -573,7 +579,7 @@ msgid "menu_xray"
 msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "Претрага X-Ray у тексту"
+msgstr "Претрага у тексту"
 
 msgid "merge_back"
 msgstr "← Назад"
@@ -784,6 +790,24 @@ msgstr "Ово поглавље"
 
 msgid "this_page"
 msgstr "Ова страница"
+
+msgid "unit_conv_direction"
+msgstr "Смер претварања"
+
+msgid "unit_conv_direction_auto"
+msgstr "Аутоматски (према подешавању уређаја)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "Увек претвори у империјалне"
+
+msgid "unit_conv_direction_metric"
+msgstr "Увек претвори у метричке"
+
+msgid "unit_conv_enabled"
+msgstr "Омогући претварач јединица"
+
+msgid "unit_conv_style_settings"
+msgstr "Подешавања стила и подвлачења"
 
 msgid "updater_available_header"
 msgstr "X-Ray %s је доступан!\nИмате верзију %s."

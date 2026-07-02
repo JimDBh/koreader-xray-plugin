@@ -27,7 +27,7 @@ msgid "ai_merged_n"
 msgstr "%d par(es) fusionado(s) con éxito."
 
 msgid "ai_scan"
-msgstr "AI Scan"
+msgstr "Escaneo con IA"
 
 msgid "ai_scanning_duplicates"
 msgstr "La IA está buscando duplicados..."
@@ -264,7 +264,7 @@ msgid "error_model_not_found_title"
 msgstr "Modelo no encontrado"
 
 msgid "error_no_api_key"
-msgstr "error_no_api_key"
+msgstr "Falta la clave API"
 
 msgid "error_parse_desc"
 msgstr "La AI devolvió una respuesta que no pudo ser procesada. Esto podría ser un fallo temporal."
@@ -375,7 +375,7 @@ msgid "language_changed_reopen"
 msgstr "Idioma cambiado. Reabra el menú para ver los cambios."
 
 msgid "later"
-msgstr "Later"
+msgstr "Más tarde"
 
 msgid "linked_entries"
 msgstr "Entradas vinculadas"
@@ -408,7 +408,7 @@ msgid "low_conf_match"
 msgstr "Coincidencia parcial: mostrando '%s' para tu consulta. Toca abajo para buscar el término exacto."
 
 msgid "manual_pick"
-msgstr "Manual Pick"
+msgstr "Selección manual"
 
 msgid "mention_dismiss_btn"
 msgstr "✕"
@@ -560,6 +560,12 @@ msgstr "Usar estilo de nota al pie para búsquedas en texto"
 msgid "menu_ui_popup_menu"
 msgstr "Usar estilo de nota al pie para búsquedas de menú"
 
+msgid "menu_unit_categories"
+msgstr "Categorías de unidades"
+
+msgid "menu_unit_converter"
+msgstr "Conversor de unidades"
+
 msgid "menu_update_xray"
 msgstr "Actualizar datos de X-Ray (Combinar)"
 
@@ -573,13 +579,13 @@ msgid "menu_xray"
 msgstr "X-Ray"
 
 msgid "menu_xray_mode"
-msgstr "Ajustes del Modo X-Ray"
+msgstr "Búsquedas en el texto"
 
 msgid "merge_back"
 msgstr "← Volver"
 
 msgid "merge_button"
-msgstr "Merge"
+msgstr "Combinar"
 
 msgid "merge_confirm"
 msgstr "¿Fusionar %s en %s? La entrada secundaria será eliminada y sus alias absorbidos."
@@ -663,10 +669,10 @@ msgid "no_timeline_data"
 msgstr "Aún no hay datos de la cronología.\n\nUsa primero 'Obtener datos de X-Ray'.\n\nLa IA mostrará los eventos clave en orden cronológico."
 
 msgid "ok"
-msgstr "OK"
+msgstr "Aceptar"
 
 msgid "pair_rejected"
-msgstr "Pair marked as not a duplicate."
+msgstr "Pareja marcada como no duplicada."
 
 msgid "path"
 msgstr "plugins/xray.koplugin"
@@ -681,10 +687,10 @@ msgid "quick_menu_title"
 msgstr "Menú rápido de X-Ray"
 
 msgid "read_more"
-msgstr "Read More"
+msgstr "Leer más"
 
 msgid "reason"
-msgstr "Reason"
+msgstr "Motivo"
 
 msgid "reasoning_about"
 msgstr "Controls 'thinking' depth for reasoning models:\n\n• Unset: No specific instruction sent; model uses its internal defaults.\n• Low: Fast, economical extraction for simple books.\n• Medium: Balanced depth for most narratives.\n• High: Detailed analysis for complex character webs.\n\nApplies to: GPT-5.x, DeepSeek Reasoner, Claude 4.5+ (extended thinking), and Gemini 2.5+."
@@ -702,13 +708,13 @@ msgid "reasoning_unset"
 msgstr "Sin establecer (Predeterminado)"
 
 msgid "reject_pair"
-msgstr "Reject"
+msgstr "Rechazar"
 
 msgid "relookup_button"
 msgstr "Volver a buscar '%s'"
 
 msgid "review"
-msgstr "Review"
+msgstr "Revisar"
 
 msgid "save"
 msgstr "Guardar"
@@ -756,7 +762,7 @@ msgid "series_prior_label"
 msgstr "[Anterior]"
 
 msgid "skip"
-msgstr "Skip"
+msgstr "Omitir"
 
 msgid "spoiler_free_about"
 msgstr "El modo sin spoilers limita la extracción de IA a las páginas que ya ha leído (hasta su página actual), evitando spoilers de futuros capítulos.\n\nEl modo de libro completo analiza todo el libro, lo que puede contener spoilers."
@@ -774,7 +780,7 @@ msgid "spoiler_preference_title"
 msgstr "Preferencia de spoilers"
 
 msgid "stop"
-msgstr "Stop"
+msgstr "Detener"
 
 msgid "term_not_found"
 msgstr "No se encontró ningún término que coincida con '%s'"
@@ -784,6 +790,24 @@ msgstr "Este Capítulo"
 
 msgid "this_page"
 msgstr "Esta página"
+
+msgid "unit_conv_direction"
+msgstr "Dirección de conversión"
+
+msgid "unit_conv_direction_auto"
+msgstr "Auto (según dispositivo)"
+
+msgid "unit_conv_direction_imperial"
+msgstr "Convertir siempre a imperial"
+
+msgid "unit_conv_direction_metric"
+msgstr "Convertir siempre a métrico"
+
+msgid "unit_conv_enabled"
+msgstr "Activar conversor de unidades"
+
+msgid "unit_conv_style_settings"
+msgstr "Ajustes de estilo y subrayado"
 
 msgid "updater_available_header"
 msgstr "¡X-Ray %s está disponible!\nTienes la %s."
