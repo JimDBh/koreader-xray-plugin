@@ -1451,7 +1451,7 @@ function XRayPlugin:showUnitStyleCard()
             bordersize = sc(2),
             color = Blitbuffer.COLOR_BLACK,
             background = xray_theme.color_bg,
-            width = dialog_w,
+            width = dialog_w - sc(2),
             VerticalGroup:new{
                 align = "left",
                 title_label,
@@ -1486,6 +1486,7 @@ function XRayPlugin:showUnitStyleCard()
             padding = 0,
             background = xray_theme.color_bg,
             radius = xray_theme.radius_window,
+            width = dialog_w,
             card
         }
 
