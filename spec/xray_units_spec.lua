@@ -270,6 +270,18 @@ describe("xray_units", function()
             assert.are.equal("17.72 inches", res2[1].converted)
         end)
 
+        it("detects decimeters and square decimeters", function()
+            local res1 = xray_units.detectMeasurements("It is 12 decimeters long.", "to_imperial")
+            assert.are.equal(1, #res1)
+            assert.are.equal("12 decimeters", res1[1].original)
+            assert.are.equal("47.24 inches", res1[1].converted)
+
+            local res2 = xray_units.detectMeasurements("It spans 5 square decimeters.", "to_imperial")
+            assert.are.equal(1, #res2)
+            assert.are.equal("5 square decimeters", res2[1].original)
+            assert.are.equal("0.54 sq ft", res2[1].converted)
+        end)
+
         it("handles unit pluralization correctly", function()
             local res1 = xray_units.detectMeasurements("1 meter", "to_imperial")
             assert.are.equal("3.28 feet", res1[1].converted)

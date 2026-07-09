@@ -169,6 +169,7 @@ function M.convert(val, category, from_unit, to_unit)
             -- Metric to meters
             ["mm"] = 0.001, ["millimeter"] = 0.001, ["millimeters"] = 0.001, ["millimetre"] = 0.001, ["millimetres"] = 0.001,
             ["cm"] = 0.01, ["centimeter"] = 0.01, ["centimeters"] = 0.01, ["centimetre"] = 0.01, ["centimetres"] = 0.01,
+            ["dm"] = 0.1, ["decimeter"] = 0.1, ["decimeters"] = 0.1, ["decimetre"] = 0.1, ["decimetres"] = 0.1,
             ["m"] = 1.0, ["meter"] = 1.0, ["meters"] = 1.0, ["metre"] = 1.0, ["metres"] = 1.0,
             ["km"] = 1000.0, ["kilometer"] = 1000.0, ["kilometers"] = 1000.0, ["kilometre"] = 1000.0, ["kilometres"] = 1000.0,
         },
@@ -191,6 +192,11 @@ function M.convert(val, category, from_unit, to_unit)
             -- Metric to L
             ["ml"] = 0.001, ["mL"] = 0.001, ["milliliter"] = 0.001, ["milliliters"] = 0.001, ["millilitre"] = 0.001, ["millilitres"] = 0.001,
             ["l"] = 1.0, ["L"] = 1.0, ["liter"] = 1.0, ["liters"] = 1.0, ["litre"] = 1.0, ["litres"] = 1.0,
+            -- Cubic units to L
+            ["m3"] = 1000.0, ["m³"] = 1000.0, ["cubic meter"] = 1000.0, ["cubic meters"] = 1000.0, ["cubic metre"] = 1000.0, ["cubic metres"] = 1000.0,
+            ["ft3"] = 28.316846592, ["ft³"] = 28.316846592, ["cubic foot"] = 28.316846592, ["cubic feet"] = 28.316846592,
+            ["in3"] = 0.016387064, ["in³"] = 0.016387064, ["cubic inch"] = 0.016387064, ["cubic inches"] = 0.016387064,
+            ["cm3"] = 0.001, ["cm³"] = 0.001, ["cubic centimeter"] = 0.001, ["cubic centimeters"] = 0.001, ["cc"] = 0.001,
         },
         speed = {
             -- Convert everything to km/h base
@@ -205,6 +211,7 @@ function M.convert(val, category, from_unit, to_unit)
             ["sq m"] = 1.0, ["m2"] = 1.0, ["m²"] = 1.0, ["square meters"] = 1.0, ["square metres"] = 1.0,
             ["sq km"] = 1000000.0, ["km2"] = 1000000.0, ["km²"] = 1000000.0, ["square kilometers"] = 1000000.0, ["square kilometres"] = 1000000.0,
             ["ha"] = 10000.0, ["hectare"] = 10000.0, ["hectares"] = 10000.0,
+            ["sq dm"] = 0.01, ["dm2"] = 0.01, ["dm²"] = 0.01, ["square decimeters"] = 0.01, ["square decimeter"] = 0.01, ["square decimetres"] = 0.01, ["square decimetre"] = 0.01,
         }
     }
 
@@ -231,8 +238,9 @@ local UNITS = {
     
     { category = "length", system = "metric", name = "mm", std_target = "inch", aliases = { "millimeters", "millimeter", "mm", "millimetres", "millimetre" } },
     { category = "length", system = "metric", name = "cm", std_target = "inch", aliases = { "centimeters", "centimeter", "cm", "centimetres", "centimetre" } },
+    { category = "length", system = "metric", name = "dm", std_target = "inch", aliases = { "decimeters", "decimeter", "dm", "decimetres", "decimetre" } },
     { category = "length", system = "metric", name = "m", std_target = "foot", aliases = { "meters", "meter", "m", "metres", "metre", "metro", "metros", "mètre", "mètres", "metri", "metr", "metry", "metrów", "метр", "метра", "метров", "метрів", "méter", "متر", "أمتار", "米", "公尺" } },
-    { category = "length", system = "metric", name = "km", std_target = "mile", aliases = { "kilometers", "kilometer", "km", "kilometres", "kilometre", "kilómetro", "kilómetros", "kilomètre", "kilomètres", "chilometro", "chilometri", "quilômetro", "quilômetros", "kilometry", "километр", "километра", "километров", "кілометр", "кілометра", "кілометрів", "kilométer", "كيلومتر", "كيلومترات", "公里", "千米" } },
+    { category = "length", system = "metric", name = "km", std_target = "mile", aliases = { "kilometers", "kilometer", "km", "kilometres", "kilometre", "kilómetro", "kilómetros", "kilomètre", "kilomètres", "chilometro", "chilometri", "quilômetro", "quilômetros", "kilometry", "километр", "километра", "километров", "кілометр", "кілометрa", "кілометрів", "kilométer", "كيلومتر", "كيلومترات", "公里", "千米" } },
 
     -- WEIGHT
     { category = "weight", system = "imperial", name = "oz", std_target = "g", aliases = { "ounces", "ounce", "oz", "unze", "unzen", "onza", "onzas", "once", "onces", "oncia", "uncja", "uncje", "uncji", "унция", "унции", "унций", "унція", "унції", "uncia", "ons", "أوقية", "أوقيات", "盎司" } },
@@ -240,7 +248,7 @@ local UNITS = {
     { category = "weight", system = "imperial", name = "st", std_target = "kg", aliases = { "stones", "stone", "st" } },
 
     { category = "weight", system = "metric", name = "g", std_target = "oz", aliases = { "grams", "gram", "g", "grammes", "gramme", "gramm", "gramo", "gramos", "grammo", "grammi", "grama", "gramas", "gramy", "грамм", "грамма", "граммов", "грам", "грама", "грамів", "جرام", "جرامات", "克" } },
-    { category = "weight", system = "metric", name = "kg", std_target = "lb", aliases = { "kilograms", "kilogram", "kg", "kilogrammes", "kilogramme", "kilogramm", "kilogramo", "kilogramos", "kilogrames", "kilo", "kilos", "chilogrammo", "chilogrammi", "chilo", "chili", "quilograma", "quilogramas", "quilo", "quilos", "kilogramy", "килограмм", "килограмма", "килограммов", "кілограм", "кілограма", "кілограмів", "كيلوجرام", "كيلوجرامات", "公斤", "千克" } },
+    { category = "weight", system = "metric", name = "kg", std_target = "lb", aliases = { "kilograms", "kilogram", "kg", "kilogrammes", "kilogramme", "kilogramm", "kilogramo", "kilogramos", "kilogrames", "kilo", "kilos", "chilogrammo", "chilogrammi", "chilo", "chili", "quilograma", "quilogramas", "quilo", "quilos", "kilogramy", "килограмм", "килограмма", "километров", "кілограм", "кілограма", "кілограмів", "كيلوجرام", "كيلوجرامات", "公斤", "千克" } },
 
     { category = "temp", system = "imperial", name = "f", std_target = "c", aliases = { "fahrenheit", "f", "degrees fahrenheit", "degree fahrenheit", "deg f", "°f", "°fahrenheit", "deg. f", "degrees f", "degree f" } },
     { category = "temp", system = "metric", name = "c", std_target = "f", aliases = { "celsius", "celcius", "c", "degrees celsius", "degree celsius", "degrees celcius", "degree celcius", "deg c", "°c", "°celsius", "°celcius", "deg. c", "degrees c", "degree c" } },
@@ -255,6 +263,11 @@ local UNITS = {
     { category = "volume", system = "metric", name = "ml", std_target = "fl oz", aliases = { "milliliters", "millimeter", "ml", "mL", "millilitres", "millilitre" } },
     { category = "volume", system = "metric", name = "l", std_target = "gallon", aliases = { "liters", "liter", "l", "L", "litres", "litre", "litro", "litros", "litri", "litr", "litry", "litrów", "литр", "литра", "литров", "літр", "літра", "літрів", "لتر", "لترات", "升", "公升" } },
 
+    { category = "volume", system = "metric", name = "m³", std_target = "ft3", aliases = { "m3", "m³", "cubic meters", "cubic meter", "cubic metres", "cubic metre" } },
+    { category = "volume", system = "imperial", name = "ft3", std_target = "m³", aliases = { "ft3", "ft³", "cubic feet", "cubic foot" } },
+    { category = "volume", system = "imperial", name = "in3", std_target = "cm³", aliases = { "in3", "in³", "cubic inches", "cubic inch" } },
+    { category = "volume", system = "metric", name = "cm³", std_target = "in3", aliases = { "cm3", "cm³", "cubic centimeters", "cubic centimeter", "cc" } },
+
     -- SPEED
     { category = "speed", system = "imperial", name = "mph", std_target = "km/h", aliases = { "mph", "miles per hour" } },
     { category = "speed", system = "metric", name = "km/h", std_target = "mph", aliases = { "km/h", "kmh", "kph", "kilometers per hour", "kilometres per hour", "км/ч", "км/год", "公里/小时", "公里/小時" } },
@@ -267,6 +280,7 @@ local UNITS = {
     { category = "area", system = "metric", name = "m²", std_target = "sq ft", aliases = { "square meters", "square metres", "sq m", "m2", "m²", "qm", "quadratmeter", "metros cuadrados", "mètres carrés", "metri quadrati", "médos quadrados", "metry kwadratowe", "кв. м", "квадратных метров", "квадратних метрів", "négyzetméter", "metrekare", "متر مربع", "أمتار مربعة", "meter persegi", "平方米" } },
     { category = "area", system = "metric", name = "km²", std_target = "sq mi", aliases = { "square kilometers", "square kilometres", "sq km", "km2", "km²", "quadratkilometer", "kilómetros cuadrados", "kilomètres carrés", "chilometri quadrati", "quilômetros quadrados", "kilometry kwadratowe", "кв. км", "квадратных километров", "квадратних кілометрів", "négyzetkilométer", "kilometrekare", "كيلومتر مربع", "kilometer persegi", "平方公里" } },
     { category = "area", system = "metric", name = "ha", std_target = "acre", aliases = { "hectares", "hectare", "ha", "hektar", "hectárea", "hectáreas", "ettaro", "ettari", "hektary", "гектар", "гектара", "гектаров", "гектарів", "hektár", "هكتار", "هكتارات", "公顷" } },
+    { category = "area", system = "metric", name = "sq dm", std_target = "sq ft", aliases = { "square decimeters", "square decimeter", "sq dm", "dm2", "dm²", "square decimetres", "square decimetre", "Quadratdezimeter", "décimètres carrés", "décimètre carré" } },
 }
 
 -- Helpers to check if a word is one of our units
@@ -807,7 +821,7 @@ function M.getScanAliases(direction, enabled_categories, lang)
             if matches_direction then
                 for _, alias in ipairs(u.aliases) do
                     local alias_lower = alias:lower()
-                    if not EXCLUDED[alias_lower] and #alias_lower > 1 and not seen[alias_lower] then
+                    if not EXCLUDED[alias_lower] and #alias_lower >= 1 and not seen[alias_lower] then
                         local is_en = (lang:lower() == "en")
                         if not (is_en and NON_ENGLISH_ASCII[alias_lower]) then
                             if should_keep_alias(alias_lower, lang) then
@@ -858,5 +872,9 @@ M.UNITS = UNITS
 M.UNIT_LOOKUP = UNIT_LOOKUP
 M.applySmartScaling = applySmartScaling
 M.parseNumberText = parseNumberText
+M.EXCLUDED = {
+    ["in"] = true,
+    ["st"] = true,
+}
 
 return M

@@ -84,10 +84,15 @@ package.loaded["ui/uimanager"] = {
         local f = b or a
         if type(f) == "function" then f() end
     end,
-    setDirty = function() end
+    setDirty = function() end,
+    forceRePaint = function() end,
+    getTime = function() return 0 end,
 }
 package.loaded["ui/widget/infomessage"] = {
     new = function(a, b) return { type = "InfoMessage", args = b or a } end
+}
+package.loaded["ui/widget/notification"] = {
+    new = function(a, b) return { type = "Notification", args = b or a } end
 }
 package.loaded["ui/widget/buttondialog"] = {
     new = function(a, b) 
@@ -277,7 +282,27 @@ function _G.createMockPlugin()
             document = {
                 file = "test_book.epub",
                 getToc = function() return {} end,
-                getProps = function() return { title = "Test Title", authors = "Test Author" } end
+                getProps = function() return { title = "Test Title", authors = "Test Author" } end,
+                compareXPointers = function(self_doc, xp1, xp2)
+                    if xp1 == xp2 then return 0 end
+                    local mock_positions = {
+                        xp_five = 5,
+                        xp_25 = 6,
+                        xp_37 = 7,
+                        xp_minus37 = 7,
+                        xp_uni37 = 7,
+                        xp_space37 = 7,
+                        xp_80 = 8,
+                        xp1 = 10,
+                        xp2 = 20,
+                    }
+                    local pos1 = mock_positions[xp1] or 0
+                    local pos2 = mock_positions[xp2] or 0
+                    if pos1 < pos2 then return 1 end
+                    if pos1 > pos2 then return -1 end
+                    if xp1 < xp2 then return 1 end
+                    return -1
+                end
             },
             paging = {
                 getCurrentPage = function() return 10 end

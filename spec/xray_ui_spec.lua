@@ -432,6 +432,14 @@ describe("xray_ui", function()
     end)
 
     describe("scanBookForUnits", function()
+        before_each(function()
+            os.remove("spec/test_book.epub.sdr/xray_unit_cache.cache")
+        end)
+
+        after_each(function()
+            os.remove("spec/test_book.epub.sdr/xray_unit_cache.cache")
+        end)
+
         it("should successfully scan document and populate unit_xp_matches", function()
             local xray_unitscanner = require("xray_unitscanner")
             for k, v in pairs(xray_unitscanner) do
@@ -443,7 +451,7 @@ describe("xray_ui", function()
                     unit_converter_enabled = true,
                     unit_underline_enabled = true,
                     unit_underline_style = "solid",
-                    unit_conversion_direction = "auto",
+                    unit_conversion_direction = "to_imperial",
                 }
             }
             
@@ -457,7 +465,11 @@ describe("xray_ui", function()
                 }
             }
             plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
-                return mock_hits
+                -- Only match when it queries the exact meters/metres batch regex pattern
+                if pat:find("|meters|") or pat:find("|metres|") or pat:find("%(meters|") or pat:find("%(metres|") then
+                    return mock_hits
+                end
+                return {}
             end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_five" end
@@ -474,6 +486,47 @@ describe("xray_ui", function()
             assert.are.equal("xp_five", plugin.unit_xp_matches[1].start_xp)
             assert.are.equal("xp2", plugin.unit_xp_matches[1].end_xp)
             assert.are.equal("five meters", plugin.unit_xp_matches[1].original)
+        end)
+
+        it("should NOT match false positive '4 will' as a unit conversion", function()
+            local xray_unitscanner = require("xray_unitscanner")
+            for k, v in pairs(xray_unitscanner) do
+                plugin[k] = v
+            end
+            
+            plugin.ai_helper = {
+                settings = {
+                    unit_converter_enabled = true,
+                    unit_underline_enabled = true,
+                    unit_underline_style = "solid",
+                    unit_conversion_direction = "to_imperial",
+                }
+            }
+            
+            local mock_hits = {
+                {
+                    matched_text = "l",
+                    start = "xp1",
+                    ["end"] = "xp2",
+                    prev_text = "4 wil",
+                    next_text = " "
+                }
+            }
+            plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
+                return mock_hits
+            end
+            plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
+                if cand == "xp1" then return "xp_four" end
+                return cand
+            end
+            plugin.ui.document.getTextFromXPointers = function(self_doc, cand, unit_end)
+                if cand == "xp_four" and unit_end == "xp2" then return "4 will" end
+                if cand == "xp_four" then return "4" end
+                return ""
+            end
+            
+            plugin:scanBookForUnits()
+            assert.are.equal(0, #plugin.unit_xp_matches)
         end)
 
         it("should successfully scan '80 degrees Celcius' and populate unit_xp_matches", function()
@@ -501,7 +554,10 @@ describe("xray_ui", function()
                 }
             }
             plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
-                return mock_hits
+                if pat:find("celsius") or pat:find("celcius") or pat:find("°[Cc]") then
+                    return mock_hits
+                end
+                return {}
             end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_80" end
@@ -546,7 +602,10 @@ describe("xray_ui", function()
                 }
             }
             plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
-                return mock_hits
+                if pat:find("liter") or pat:find("litre") or pat:find("l") then
+                    return mock_hits
+                end
+                return {}
             end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_25" end
@@ -634,7 +693,12 @@ describe("xray_ui", function()
                     next_text = "."
                 }
             }
-            plugin.ui.document.findAllText = function() return mock_hits1 end
+            plugin.ui.document.findAllText = function(self_doc, pat)
+                if pat:find("°[Cc]") then
+                    return mock_hits1
+                end
+                return {}
+            end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_minus37" end
                 return cand
@@ -659,7 +723,12 @@ describe("xray_ui", function()
                     next_text = "."
                 }
             }
-            plugin.ui.document.findAllText = function() return mock_hits2 end
+            plugin.ui.document.findAllText = function(self_doc, pat)
+                if pat:find("°[Cc]") then
+                    return mock_hits2
+                end
+                return {}
+            end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_uni37" end
                 return cand
@@ -684,7 +753,12 @@ describe("xray_ui", function()
                     next_text = "."
                 }
             }
-            plugin.ui.document.findAllText = function() return mock_hits3 end
+            plugin.ui.document.findAllText = function(self_doc, pat)
+                if pat:find("°[Cc]") then
+                    return mock_hits3
+                end
+                return {}
+            end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_space37" end
                 return cand
@@ -698,6 +772,227 @@ describe("xray_ui", function()
             assert.are.equal(1, #plugin.unit_xp_matches)
             assert.are.equal("- 37°C", plugin.unit_xp_matches[1].original)
             assert.are.equal("-34.6 °F", plugin.unit_xp_matches[1].converted)
+        end)
+
+        it("should successfully convert 100 kg and 100 g correctly without collisions", function()
+            local xray_unitscanner = require("xray_unitscanner")
+            for k, v in pairs(xray_unitscanner) do
+                plugin[k] = v
+            end
+            
+            plugin.ai_helper = {
+                settings = {
+                    unit_converter_enabled = true,
+                    unit_underline_enabled = true,
+                    unit_underline_style = "solid",
+                    unit_conversion_direction = "to_imperial",
+                }
+            }
+            
+            local mock_hits = {
+                {
+                    matched_text = "kg",
+                    start = "xp1",
+                    ["end"] = "xp2",
+                    prev_text = "The package weighs 100 ",
+                    next_text = " on scale."
+                }
+            }
+            plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
+                if pat:find("kg") or pat:find("kilogram") then
+                    return mock_hits
+                end
+                if pat:find("|g|") or pat:find("|grams|") or pat:find("%(grams|") or pat:find("%(g|") then
+                    return {
+                        {
+                            matched_text = "g",
+                            start = "xp_g",
+                            ["end"] = "xp2",
+                            prev_text = "The package weighs 100 k",
+                            next_text = " on scale."
+                        }
+                    }
+                end
+                return {}
+            end
+            plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
+                if cand == "xp1" then return "xp_100" end
+                if cand == "xp_g" then return "xp_100_k" end
+                return cand
+            end
+            plugin.ui.document.getTextFromXPointers = function(self_doc, cand, unit_end)
+                if cand == "xp_100" and unit_end == "xp2" then return "100 kg" end
+                if cand == "xp_100" then return "100" end
+                if cand == "xp_100_k" and unit_end == "xp2" then return "100 kg" end
+                if cand == "xp_100_k" then return "100 k" end
+                return ""
+            end
+            
+            plugin:scanBookForUnits()
+            assert.are.equal(1, #plugin.unit_xp_matches)
+            assert.are.equal("100 kg", plugin.unit_xp_matches[1].original)
+            assert.are.equal("220.46 lb", plugin.unit_xp_matches[1].converted)
+        end)
+
+        it("should successfully convert 10 centimetres and .965 kg/l correctly", function()
+            local xray_unitscanner = require("xray_unitscanner")
+            for k, v in pairs(xray_unitscanner) do
+                plugin[k] = v
+            end
+            
+            plugin.ai_helper = {
+                settings = {
+                    unit_converter_enabled = true,
+                    unit_underline_enabled = true,
+                    unit_underline_style = "solid",
+                    unit_conversion_direction = "to_imperial",
+                }
+            }
+            
+            plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
+                local res = {}
+                if pat:find("centimetres") or pat:find("cm") then
+                    table.insert(res, {
+                        matched_text = "centimetres",
+                        start = "xp_cm_start",
+                        ["end"] = "xp_cm_end",
+                        prev_text = "The line is 10 ",
+                        next_text = " long."
+                    })
+                end
+                if pat:find("kilograms") or pat:find("kg") then
+                    table.insert(res, {
+                        matched_text = "kg",
+                        start = "xp_kg_start",
+                        ["end"] = "xp_kg_end",
+                        prev_text = "The density is .965 ",
+                        next_text = "/l."
+                    })
+                end
+                return res
+            end
+            plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
+                if cand == "xp_cm_start" then return "xp_10" end
+                if cand == "xp_kg_start" then return "xp_965" end
+                return cand
+            end
+            plugin.ui.document.compareXPointers = function(self_doc, xp1, xp2)
+                if xp1 == xp2 then return 0 end
+                local pos = {
+                    xp_10 = 30,
+                    xp_cm_end = 40,
+                    xp_965 = 50,
+                    xp_kg_end = 60,
+                }
+                local p1 = pos[xp1] or 0
+                local p2 = pos[xp2] or 0
+                if p1 < p2 then return 1 end
+                if p1 > p2 then return -1 end
+                if xp1 < xp2 then return 1 end
+                return -1
+            end
+            plugin.ui.document.getTextFromXPointers = function(self_doc, cand, unit_end)
+                if cand == "xp_10" and unit_end == "xp_cm_end" then return "10 centimetres" end
+                if cand == "xp_10" then return "10" end
+                if cand == "xp_965" and unit_end == "xp_kg_end" then return ".965 kg" end
+                if cand == "xp_965" then return ".965" end
+                return ""
+            end
+            
+            plugin:scanBookForUnits()
+            
+            assert.are.equal(2, #plugin.unit_xp_matches)
+            
+            table.sort(plugin.unit_xp_matches, function(a, b) return a.original < b.original end)
+            
+            assert.are.equal(".965 kg", plugin.unit_xp_matches[1].original)
+            assert.are.equal("2.13 lb", plugin.unit_xp_matches[1].converted)
+            
+            assert.are.equal("10 centimetres", plugin.unit_xp_matches[2].original)
+            assert.are.equal("3.94 inches", plugin.unit_xp_matches[2].converted)
+        end)
+    end)
+    describe("cache operations", function()
+        local test_cache_file = "spec/tmp_test_cache.cache"
+
+        before_each(function()
+            os.remove(test_cache_file)
+        end)
+
+        after_each(function()
+            os.remove(test_cache_file)
+        end)
+
+        it("should correctly save and load the tab-separated cache format", function()
+            local xray_unitscanner = require("xray_unitscanner")
+            for k, v in pairs(xray_unitscanner) do
+                plugin[k] = v
+            end
+
+            plugin.ai_helper = {
+                settings = {
+                    unit_converter_enabled = true,
+                    unit_underline_enabled = true,
+                    unit_conversion_direction = "to_imperial",
+                }
+            }
+
+            -- Mock _getUnitCachePath
+            local original_getUnitCachePath = plugin._getUnitCachePath
+            rawset(plugin, "_getUnitCachePath", function()
+                return test_cache_file
+            end)
+
+            plugin.unit_xp_matches = {
+                {
+                    start_xp = "xp_1",
+                    end_xp = "xp_2",
+                    original = "10 cm",
+                    converted = "3.94 inches",
+                    category = "length"
+                },
+                {
+                    start_xp = "xp_3",
+                    end_xp = "xp_4",
+                    original = "100\nkg",
+                    converted = "220.46\r\nlb",
+                    category = "weight"
+                }
+            }
+
+            -- Save cache
+            plugin:saveUnitCache()
+
+            -- Verify file contents exist
+            local f = io.open(test_cache_file, "r")
+            assert.is_not_nil(f)
+            local lines = {}
+            for line in f:lines() do
+                table.insert(lines, line)
+            end
+            f:close()
+
+            -- Signature version 9 + settings categories + 2 entries
+            assert.are.equal(3, #lines)
+            assert.is_true(lines[1]:find("^v9|to_imperial|") ~= nil)
+            assert.are.equal("xp_1\txp_2\t10 cm\t3.94 inches\tlength", lines[2])
+            assert.are.equal("xp_3\txp_4\t100 kg\t220.46  lb\tweight", lines[3])
+
+            -- Clear and load cache
+            plugin.unit_xp_matches = {}
+            local loaded = plugin:loadUnitCache()
+            assert.is_true(loaded)
+            assert.are.equal(2, #plugin.unit_xp_matches)
+            assert.are.equal("xp_1", plugin.unit_xp_matches[1].start_xp)
+            assert.are.equal("3.94 inches", plugin.unit_xp_matches[1].converted)
+            assert.are.equal("100 kg", plugin.unit_xp_matches[2].original)
+            assert.are.equal("220.46  lb", plugin.unit_xp_matches[2].converted)
+            assert.are.equal("weight", plugin.unit_xp_matches[2].category)
+
+            -- Test signature mismatch invalidation
+            plugin.ai_helper.settings.unit_conversion_direction = "to_metric"
+            local loaded_invalid = plugin:loadUnitCache()
+            assert.is_false(loaded_invalid)
         end)
     end)
 
