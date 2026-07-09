@@ -26,7 +26,13 @@ local NON_ENGLISH_ASCII = {
     uncia=true, ons=true, pfund=true, libra=true, libras=true,
     livre=true, livres=true, libbra=true, libbre=true, funt=true,
     funty=true, font=true, libre=true, pon=true, hektar=true,
-    ettaro=true, ettari=true, hektary=true
+    ettaro=true, ettari=true, hektary=true,
+    metro=true, metros=true, metri=true, metry=true, chilometro=true, chilometri=true, kilometry=true,
+    grammo=true, grammi=true, kilogramo=true, kilogramos=true, kilogrames=true, chilogrammo=true, chilogrammi=true,
+    chilo=true, chili=true, quilograma=true, quilogramas=true, quilo=true, quilos=true, kilogramy=true,
+    litro=true, litros=true, litri=true, litry=true, quadratmeter=true, ["metros cuadrados"]=true, ["metri quadrati"]=true,
+    ["metry kwadratowe"]=true, metrekare=true, ["meter persegi"]=true, quadratkilometer=true, ["chilometri quadrati"]=true,
+    ["kilometry kwadratowe"]=true, kilometrekare=true, ["kilometer persegi"]=true, quadratdezimeter=true
 }
 
 M.NON_ENGLISH_ASCII = NON_ENGLISH_ASCII
@@ -51,10 +57,14 @@ local COMMA_LOCALES = {
 -- Format number according to locale and smart formatting
 function M.formatNumber(val, lang)
     if not val then return "0" end
-    -- Round to at most 2 decimal places
-    local formatted = string.format("%.2f", val)
-    -- Remove trailing zeros and dot
-    formatted = formatted:gsub("0+$", ""):gsub("%.$", "")
+    -- Use adaptive precision for very small values
+    local formatted
+    if math.abs(val) > 0 and math.abs(val) < 0.01 then
+        formatted = string.format("%.4g", val)
+    else
+        formatted = string.format("%.2f", val)
+        formatted = formatted:gsub("0+$", ""):gsub("%.$", "")
+    end
     
     local integer_part, decimal_part = formatted:match("^([^%.]*)(%.?.*)$")
     local decimal_sep = "."
@@ -212,6 +222,8 @@ function M.convert(val, category, from_unit, to_unit)
             ["sq km"] = 1000000.0, ["km2"] = 1000000.0, ["km²"] = 1000000.0, ["square kilometers"] = 1000000.0, ["square kilometres"] = 1000000.0,
             ["ha"] = 10000.0, ["hectare"] = 10000.0, ["hectares"] = 10000.0,
             ["sq dm"] = 0.01, ["dm2"] = 0.01, ["dm²"] = 0.01, ["square decimeters"] = 0.01, ["square decimeter"] = 0.01, ["square decimetres"] = 0.01, ["square decimetre"] = 0.01,
+            ["sq in"] = 0.00064516, ["in2"] = 0.00064516, ["in²"] = 0.00064516, ["square inches"] = 0.00064516, ["square inch"] = 0.00064516,
+            ["sq cm"] = 0.0001, ["cm2"] = 0.0001, ["cm²"] = 0.0001, ["square centimeters"] = 0.0001, ["square centimeter"] = 0.0001, ["square centimetres"] = 0.0001, ["square centimetre"] = 0.0001,
         }
     }
 
@@ -266,7 +278,7 @@ local UNITS = {
     { category = "volume", system = "metric", name = "m³", std_target = "ft3", aliases = { "m3", "m³", "cubic meters", "cubic meter", "cubic metres", "cubic metre" } },
     { category = "volume", system = "imperial", name = "ft3", std_target = "m³", aliases = { "ft3", "ft³", "cubic feet", "cubic foot" } },
     { category = "volume", system = "imperial", name = "in3", std_target = "cm³", aliases = { "in3", "in³", "cubic inches", "cubic inch" } },
-    { category = "volume", system = "metric", name = "cm³", std_target = "in3", aliases = { "cm3", "cm³", "cubic centimeters", "cubic centimeter", "cc" } },
+    { category = "volume", system = "metric", name = "cm³", std_target = "in3", aliases = { "cm3", "cm³", "cubic centimeters", "cubic centimeter", "cubic centimetres", "cubic centimetre", "cc" } },
 
     -- SPEED
     { category = "speed", system = "imperial", name = "mph", std_target = "km/h", aliases = { "mph", "miles per hour" } },
@@ -276,11 +288,13 @@ local UNITS = {
     { category = "area", system = "imperial", name = "sq ft", std_target = "m²", aliases = { "square feet", "sq ft", "ft2", "ft²" } },
     { category = "area", system = "imperial", name = "sq mi", std_target = "km²", aliases = { "square miles", "sq mi", "mi2", "mi²" } },
     { category = "area", system = "imperial", name = "acre", std_target = "ha", aliases = { "acres", "acre" } },
+    { category = "area", system = "imperial", name = "sq in", std_target = "cm²", aliases = { "square inches", "square inch", "sq in", "in2", "in²" } },
 
     { category = "area", system = "metric", name = "m²", std_target = "sq ft", aliases = { "square meters", "square metres", "sq m", "m2", "m²", "qm", "quadratmeter", "metros cuadrados", "mètres carrés", "metri quadrati", "médos quadrados", "metry kwadratowe", "кв. м", "квадратных метров", "квадратних метрів", "négyzetméter", "metrekare", "متر مربع", "أمتار مربعة", "meter persegi", "平方米" } },
     { category = "area", system = "metric", name = "km²", std_target = "sq mi", aliases = { "square kilometers", "square kilometres", "sq km", "km2", "km²", "quadratkilometer", "kilómetros cuadrados", "kilomètres carrés", "chilometri quadrati", "quilômetros quadrados", "kilometry kwadratowe", "кв. км", "квадратных километров", "квадратних кілометрів", "négyzetkilométer", "kilometrekare", "كيلومتر مربع", "kilometer persegi", "平方公里" } },
     { category = "area", system = "metric", name = "ha", std_target = "acre", aliases = { "hectares", "hectare", "ha", "hektar", "hectárea", "hectáreas", "ettaro", "ettari", "hektary", "гектар", "гектара", "гектаров", "гектарів", "hektár", "هكتار", "هكتارات", "公顷" } },
     { category = "area", system = "metric", name = "sq dm", std_target = "sq ft", aliases = { "square decimeters", "square decimeter", "sq dm", "dm2", "dm²", "square decimetres", "square decimetre", "Quadratdezimeter", "décimètres carrés", "décimètre carré" } },
+    { category = "area", system = "metric", name = "cm²", std_target = "sq in", aliases = { "square centimeters", "square centimeter", "square centimetres", "square centimetre", "sq cm", "cm2", "cm²" } },
 }
 
 -- Helpers to check if a word is one of our units

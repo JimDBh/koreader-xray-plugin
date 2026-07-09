@@ -458,7 +458,7 @@ local function extend_span_start(doc, unit_start, num_val)
     if not doc or not unit_start or not num_val then return unit_start end
     local cand = unit_start
     local best_cand = unit_start
-    for i = 1, 8 do
+    for i = 1, 4 do
         local ok, prev = pcall(function()
             return doc:getPrevVisibleWordStart(cand)
         end)
@@ -468,13 +468,13 @@ local function extend_span_start(doc, unit_start, num_val)
             return doc:getTextFromXPointers(cand, unit_start)
         end)
         if ok2 and t then
-            if t:find("[\r\n]") then break end
+            if t:find("[\r\n]") or t:find("%.%s") or t:find("%!%s") or t:find("%?%s") then break end
             t = t:gsub("^%s+", ""):gsub("%s+$", ""):lower()
             local clean_t = t:gsub("[%-,]$", "")
             local v = xray_units.parseNumberText(clean_t)
             if v and math.abs(v - num_val) < 0.001 then
                 best_cand = cand
-            else
+            elseif not clean_t:match("^%a") then
                 local head = clean_t:match("^([a-z%d%.,%-]+)")
                 if head then
                     local hv = xray_units.parseNumberText(head)
@@ -506,7 +506,7 @@ local function _getSettingsSignature(settings)
     local cat_s = settings.unit_cat_speed ~= false
     local cat_a = settings.unit_cat_area ~= false
     return table.concat({
-        "v11",
+        "v23",
         direction,
         tostring(cat_l), tostring(cat_w), tostring(cat_t),
         tostring(cat_v), tostring(cat_s), tostring(cat_a)
@@ -642,48 +642,99 @@ function M:scanBookForUnits()
                 return
             end
 
-            -- Prepare unit aliases with boundary marker placeholder (\2) for trie
-            local prepared_aliases = {}
+            -- Split unit aliases into ambiguous and unambiguous categories
+            local ambiguous_aliases = {}
+            local unambiguous_aliases = {}
             for _, alias in ipairs(aliases) do
                 local normalized = alias:lower():gsub("%s+", " ")
-                if normalized:match("[%w]$") then
-                    normalized = normalized .. "\2"
+                local base = normalized:gsub("%.+$", "")
+                local first_byte = normalized:byte(1)
+                local starts_with_non_ascii = first_byte and first_byte > 127
+                
+                if base == "in" or base == "m" or base == "l" or base == "g" or base == "f" or base == "t" or base == "c" or starts_with_non_ascii then
+                    if normalized:match("[%w]$") then
+                        normalized = normalized .. "\2"
+                    end
+                    table.insert(ambiguous_aliases, normalized)
+                else
+                    if normalized:match("[%w]$") then
+                        normalized = normalized .. "\2"
+                    end
+                    table.insert(unambiguous_aliases, normalized)
                 end
-                table.insert(prepared_aliases, normalized)
             end
-            local unit_trie = build_trie(prepared_aliases)
-            local unit_trie_regex = trie_to_regex(unit_trie)
 
-            -- Prepare prefix words trie
-            local prefixes = {
-                "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
-                "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
-                "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
-                "hundred", "thousand", "million", "billion", "half", "quarter",
-                "a", "an", "a few", "a couple", "several", "a dozen", "half a dozen", "some", "many",
-                "hundreds of", "thousands of", "millions of", "tens of", "dozens of", "couple of", "handful of"
-            }
-            local prepared_prefixes = {}
-            for _, p in ipairs(prefixes) do
-                local normalized = p:lower():gsub("%s+", " ")
-                table.insert(prepared_prefixes, normalized)
+            local is_ambig = {}
+            for _, alias in ipairs(ambiguous_aliases) do
+                local clean = alias:gsub("\2", ""):lower()
+                is_ambig[clean] = true
             end
-            local prefix_trie = build_trie(prepared_prefixes)
-            local prefix_trie_regex = trie_to_regex(prefix_trie)
 
-            local pat = "((\\b" .. prefix_trie_regex .. "|\\b[0-9]+[0-9\\.,]*)\\s*|\\.[0-9]+\\s*)(" .. unit_trie_regex .. ")"
-            log("scanBookForUnits: hybrid regex pattern=[" .. pat .. "]")
+            local digit_units = ""
+            if #ambiguous_aliases > 0 and #unambiguous_aliases > 0 then
+                local ambig_trie = build_trie(ambiguous_aliases)
+                local ambig_trie_regex = trie_to_regex(ambig_trie)
+                local unambig_trie = build_trie(unambiguous_aliases)
+                local unambig_trie_regex = trie_to_regex(unambig_trie)
+                digit_units = ambig_trie_regex .. "|" .. unambig_trie_regex
+            elseif #ambiguous_aliases > 0 then
+                local ambig_trie = build_trie(ambiguous_aliases)
+                local ambig_trie_regex = trie_to_regex(ambig_trie)
+                digit_units = ambig_trie_regex
+            else
+                local unambig_trie = build_trie(unambiguous_aliases)
+                local unambig_trie_regex = trie_to_regex(unambig_trie)
+                digit_units = unambig_trie_regex
+            end
+
+            local pat_digit = "((\\b[0-9]+[0-9\\.,]*|\\.[0-9]+)\\s*(" .. digit_units .. "))"
+            local pat_word
+            if #unambiguous_aliases > 0 then
+                local unambig_trie = build_trie(unambiguous_aliases)
+                local unambig_trie_regex = trie_to_regex(unambig_trie)
+                pat_word = "(\\b(" .. unambig_trie_regex .. "))"
+            end
+            
+            log("scanBookForUnits: pat_digit=[" .. tostring(pat_digit) .. "]")
+            if pat_word then
+                log("scanBookForUnits: pat_word=[" .. tostring(pat_word) .. "]")
+            end
 
             local doc = self.ui.document
-            local ok, hits = pcall(function()
+            local t0 = os.clock()
+            local ok1, hits1 = pcall(function()
                 -- Note: findAllText regex flag is true, contextWords=5, maxResults=5000, returnXPointers=true
-                return doc:findAllText(pat, true, 5, 5000, true)
+                return doc:findAllText(pat_digit, true, 5, 5000, true)
             end)
-            
-            if not ok or not hits then
-                log("scanBookForUnits: findAllText failed: " .. tostring(hits))
+            local t1 = os.clock()
+            log(string.format("scanBookForUnits: findAllText (digit) took %.2fs", t1 - t0))
+
+            local ok2, hits2
+            local t2 = t1
+            if pat_word then
+                ok2, hits2 = pcall(function()
+                    return doc:findAllText(pat_word, true, 5, 5000, true)
+                end)
+                t2 = os.clock()
+                log(string.format("scanBookForUnits: findAllText (word) took %.2fs", t2 - t1))
+            end
+
+            if (not ok1 or not hits1) and (not pat_word or (not ok2 or not hits2)) then
+                log("scanBookForUnits: findAllText failed: " .. tostring(hits1 or hits2))
                 self:clearUnitUnderlines()
                 return
+            end
+
+            local hits = {}
+            if ok1 and hits1 then
+                for _, h in ipairs(hits1) do
+                    table.insert(hits, h)
+                end
+            end
+            if ok2 and hits2 then
+                for _, h in ipairs(hits2) do
+                    table.insert(hits, h)
+                end
             end
 
             -- Deduplicate overlapping hits by end xpointer (keeps the longest match)
@@ -701,7 +752,8 @@ function M:scanBookForUnits()
             end
             hits = deduped_hits
 
-            log("scanBookForUnits: findAllText returned " .. tostring(#hits) .. " hits")
+            local t_start_lua = os.clock()
+            log(string.format("scanBookForUnits: dedup took %.2fs, %d hits", t_start_lua - t2, #hits))
 
             local xp_matches = {}
             local lang = self.loc and self.loc:getLanguage() or "en"
@@ -715,6 +767,15 @@ function M:scanBookForUnits()
                 return #a > #b
             end)
 
+            -- Construct suffix_map hash table: last_word -> list of full aliases (sorted long -> short)
+            local suffix_map = {}
+            for _, alias in ipairs(sorted_aliases) do
+                local alias_lower = alias:gsub("\194\160", " "):gsub("%s+", " ")
+                local last_word = alias_lower:match("([^%s]+)%s*$") or alias_lower
+                suffix_map[last_word] = suffix_map[last_word] or {}
+                table.insert(suffix_map[last_word], alias_lower)
+            end
+
             for _, hit in ipairs(hits) do
                 local is_range = false
                 local val, num_str
@@ -724,10 +785,11 @@ function M:scanBookForUnits()
                 local matched_text = (hit.matched_text or "")
                 local lower_matched = matched_text:lower():gsub("\194\160", " "):gsub("%s+", " ")
                 
-                -- Extract unit alias
+                -- Extract unit alias using suffix_map lookup
                 local matched_alias = nil
-                for _, alias in ipairs(sorted_aliases) do
-                    local alias_lower = alias:gsub("\194\160", " "):gsub("%s+", " ")
+                local last_word = lower_matched:match("([^%s]+)%s*$") or ""
+                local candidates = suffix_map[last_word] or {}
+                for _, alias_lower in ipairs(candidates) do
                     if lower_matched:sub(-#alias_lower) == alias_lower then
                         matched_alias = alias_lower
                         break
@@ -902,7 +964,11 @@ function M:scanBookForUnits()
                         end
                         
                         -- Underline spans from beginning of match (the number) to end of match
-                        local span_start = extend_span_start(doc, hit.start, is_range and val1 or val)
+                        local span_start = hit.start
+                        local num_part_clean = num_part:gsub("%s+", "")
+                        if num_part_clean == "" or is_range or is_vague then
+                            span_start = extend_span_start(doc, hit.start, is_range and val1 or val)
+                        end
                         local ok_t, real_text = pcall(function()
                             return doc:getTextFromXPointers(span_start, hit["end"])
                         end)
@@ -912,26 +978,21 @@ function M:scanBookForUnits()
                         if ok_t and real_text then
                             original_text = real_text:gsub("^%s+", ""):gsub("%s+$", "")
                             
-                            -- Reject if resolved text contains newlines
-                            if not original_text:find("[\r\n]") then
+                            -- Reject if resolved text contains newlines, unless matched unit is unambiguous
+                            local has_newline = original_text:find("[\r\n]")
+                            if not has_newline or not is_ambig[matched_alias] then
+                                if has_newline then
+                                    original_text = original_text:gsub("[\r\n]+", " "):gsub("%s+", " ")
+                                end
                                 valid = true
                                 if not is_range then
-                                    local lower_orig = original_text:gsub("−", "-"):gsub("–", "-"):gsub("—", "-"):lower()
-                                    local lower_num = num_str:gsub("^%s+", ""):gsub("%s+$", ""):lower()
-                                    local lower_match = hit.matched_text:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+                                    local lower_orig = original_text:gsub("−", "-"):gsub("–", "-"):gsub("—", "-"):lower():gsub("\194\160", " "):gsub("%s+", " ")
+                                    local lower_num = num_str:gsub("^%s+", ""):gsub("%s+$", ""):lower():gsub("\194\160", " "):gsub("%s+", " ")
+                                    local lower_match = hit.matched_text:lower():gsub("\194\160", " "):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
                                     
-                                    if lower_orig:sub(1, #lower_num) == lower_num then
-                                        local suffix = lower_orig:sub(#lower_num + 1)
-                                        if suffix:sub(-#lower_match) == lower_match then
-                                            local middle = suffix:sub(1, #suffix - #lower_match)
-                                            if middle:match("[%w]") then
-                                                valid = false
-                                            end
-                                        end
-                                    else
-                                        local first_idx = lower_orig:find(lower_num, 1, true)
-                                        if first_idx then
-                                            local suffix = lower_orig:sub(first_idx + #lower_num)
+                                    if lower_orig ~= lower_match then
+                                        if lower_orig:sub(1, #lower_num) == lower_num then
+                                            local suffix = lower_orig:sub(#lower_num + 1)
                                             if suffix:sub(-#lower_match) == lower_match then
                                                 local middle = suffix:sub(1, #suffix - #lower_match)
                                                 if middle:match("[%w]") then
@@ -939,7 +1000,18 @@ function M:scanBookForUnits()
                                                 end
                                             end
                                         else
-                                            valid = false
+                                            local first_idx = lower_orig:find(lower_num, 1, true)
+                                            if first_idx then
+                                                local suffix = lower_orig:sub(first_idx + #lower_num)
+                                                if suffix:sub(-#lower_match) == lower_match then
+                                                    local middle = suffix:sub(1, #suffix - #lower_match)
+                                                    if middle:match("[%w]") then
+                                                        valid = false
+                                                    end
+                                                end
+                                            else
+                                                valid = false
+                                            end
                                         end
                                     end
                                 end
@@ -962,7 +1034,9 @@ function M:scanBookForUnits()
             end
 
             self.unit_xp_matches = xp_matches
-            log("scanBookForUnits: successfully parsed " .. tostring(#xp_matches) .. " unit matches")
+            local t3 = os.clock()
+            log(string.format("scanBookForUnits: Lua processing took %.2fs, %d unit matches", t3 - t_start_lua, #xp_matches))
+            log(string.format("scanBookForUnits: TOTAL %.2fs", t3 - t0))
             self:saveUnitCache()
             
             UIManager:show(Notification:new{
