@@ -746,13 +746,41 @@ function M:scanBookForUnits(force)
             local pat_digit = "(([0-9]+[0-9\\.,]*|\\.[0-9]+)\\s*(" .. digit_units .. "))"
             local pat_word
             local parts = {}
-            if #word_unambiguous_aliases > 0 then
-                local trie = build_trie(word_unambiguous_aliases)
-                table.insert(parts, "\\b(" .. trie_to_regex(trie) .. ")")
+            
+            local function is_abbreviation(alias)
+                local clean = alias:gsub("\2", ""):gsub("%s+", "")
+                if clean:match("%d") or clean:find("[°º/%./]") then
+                    return true
+                end
+                if #clean < 4 and clean ~= "cup" then
+                    return true
+                end
+                return false
             end
-            if #non_word_unambiguous_aliases > 0 then
-                local trie = build_trie(non_word_unambiguous_aliases)
-                table.insert(parts, "(" .. trie_to_regex(trie) .. ")")
+
+            local filtered_word_aliases = {}
+            for _, alias in ipairs(word_unambiguous_aliases) do
+                if not is_abbreviation(alias) then
+                    table.insert(filtered_word_aliases, alias)
+                end
+            end
+
+            local filtered_non_word_aliases = {}
+            for _, alias in ipairs(non_word_unambiguous_aliases) do
+                if not is_abbreviation(alias) then
+                    table.insert(filtered_non_word_aliases, alias)
+                end
+            end
+
+            if #filtered_word_aliases > 0 then
+                local trie = build_trie(filtered_word_aliases)
+                local r = trie_to_regex(trie)
+                table.insert(parts, "\\b(" .. r .. ")")
+            end
+            if #filtered_non_word_aliases > 0 then
+                local trie = build_trie(filtered_non_word_aliases)
+                local r = trie_to_regex(trie)
+                table.insert(parts, "(" .. r .. ")")
             end
             if #parts > 0 then
                 pat_word = "(" .. table.concat(parts, "|") .. ")"
