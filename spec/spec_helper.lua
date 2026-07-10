@@ -47,7 +47,7 @@ package.loaded["logger"] = {
 }
 
 package.loaded["xray_logger"] = {
-    log = function(...) end,
+    log = function(...) print(...) end,
 }
 
 package.loaded["datastorage"] = {

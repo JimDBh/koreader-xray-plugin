@@ -1037,6 +1037,22 @@ msgstr "本章"
 msgid "this_page"
 msgstr "当前页"
 
+# en-hash: fd380cdfeb02e89fd87e81a03440d1a4
+msgid "unit_auto_scan_about"
+msgstr "大书的扫描可能需要长达 15-20 秒。这仅在第一次打开书籍时发生，结果会保存下来以便将来使用。"
+
+# en-hash: b9f5c797ebbf55adccdd8539a65a0241
+msgid "unit_auto_scan_disabled"
+msgstr "已禁用"
+
+# en-hash: 00d23a76e43b46dae9ec7aa9dcbebb32
+msgid "unit_auto_scan_enabled"
+msgstr "已启用"
+
+# en-hash: b1c61b015abaa0f358173ae8aaf8d96e
+msgid "unit_auto_scan_settings"
+msgstr "自动扫描设置"
+
 # en-hash: 5b2e3a633a4d820d64aa4356495ab188
 msgid "unit_conv_direction"
 msgstr "转换方向"
@@ -1080,6 +1096,10 @@ msgstr "淡"
 # en-hash: 87f8a6ab85c9ced3702b4ea641ad4bb5
 msgid "unit_intensity_medium"
 msgstr "中"
+
+# en-hash: 2e507ae5d58861d457e684dfe05b9593
+msgid "unit_manual_scan_button"
+msgstr "扫描/重新扫描"
 
 # en-hash: 2f59140753baa1e1e8193111db3ed7e1
 msgid "unit_style_preview_title"

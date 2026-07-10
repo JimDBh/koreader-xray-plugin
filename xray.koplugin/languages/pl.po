@@ -1037,6 +1037,22 @@ msgstr "Ten rozdział"
 msgid "this_page"
 msgstr "Ta strona"
 
+# en-hash: fd380cdfeb02e89fd87e81a03440d1a4
+msgid "unit_auto_scan_about"
+msgstr "Skanowanie dużych książek może zająć do 15–20 sekund. Dzieje się to tylko przy pierwszym otwarciu książki, a wyniki są zapisywane na przyszłość."
+
+# en-hash: b9f5c797ebbf55adccdd8539a65a0241
+msgid "unit_auto_scan_disabled"
+msgstr "Wyłączone"
+
+# en-hash: 00d23a76e43b46dae9ec7aa9dcbebb32
+msgid "unit_auto_scan_enabled"
+msgstr "Włączone"
+
+# en-hash: b1c61b015abaa0f358173ae8aaf8d96e
+msgid "unit_auto_scan_settings"
+msgstr "Ustawienia automatycznego skanowania"
+
 # en-hash: 5b2e3a633a4d820d64aa4356495ab188
 msgid "unit_conv_direction"
 msgstr "Kierunek konwersji"
@@ -1080,6 +1096,10 @@ msgstr "Jasna"
 # en-hash: 87f8a6ab85c9ced3702b4ea641ad4bb5
 msgid "unit_intensity_medium"
 msgstr "Średnia"
+
+# en-hash: 2e507ae5d58861d457e684dfe05b9593
+msgid "unit_manual_scan_button"
+msgstr "Skanuj/Skanuj ponownie"
 
 # en-hash: 2f59140753baa1e1e8193111db3ed7e1
 msgid "unit_style_preview_title"

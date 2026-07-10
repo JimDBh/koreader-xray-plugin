@@ -38,14 +38,21 @@ local NON_ENGLISH_ASCII = {
 M.NON_ENGLISH_ASCII = NON_ENGLISH_ASCII
 
 -- Returns standard conversion direction based on reader settings
-function M.getDefaultDirection()
+function M.getDefaultDirection(lang)
     if G_reader_settings then
         local setting = G_reader_settings:readSetting("dimension_units")
         if setting == "in" or setting == "imperial" then
-            return "to_imperial"  -- Accustomed to imperial -> convert FROM metric TO imperial
+            return "to_imperial"
+        elseif setting == "mm" or setting == "metric" then
+            return "to_metric"
         end
     end
-    return "to_metric"            -- Accustomed to metric -> convert FROM imperial TO metric
+    lang = lang or "en"
+    -- US and UK typically use imperial for common reading, so they want things converted TO imperial
+    if lang == "en-US" or lang == "en-UK" or lang == "en-GB" or lang == "en" then
+        return "to_imperial"
+    end
+    return "to_metric"
 end
 
 local COMMA_LOCALES = {
@@ -262,8 +269,8 @@ local UNITS = {
     { category = "weight", system = "metric", name = "g", std_target = "oz", aliases = { "grams", "gram", "g", "grammes", "gramme", "gramm", "gramo", "gramos", "grammo", "grammi", "grama", "gramas", "gramy", "грамм", "грамма", "граммов", "грам", "грама", "грамів", "جرام", "جرامات", "克" } },
     { category = "weight", system = "metric", name = "kg", std_target = "lb", aliases = { "kilograms", "kilogram", "kg", "kilogrammes", "kilogramme", "kilogramm", "kilogramo", "kilogramos", "kilogrames", "kilo", "kilos", "chilogrammo", "chilogrammi", "chilo", "chili", "quilograma", "quilogramas", "quilo", "quilos", "kilogramy", "килограмм", "килограмма", "километров", "кілограм", "кілограма", "кілограмів", "كيلوجرام", "كيلوجرامات", "公斤", "千克" } },
 
-    { category = "temp", system = "imperial", name = "f", std_target = "c", aliases = { "fahrenheit", "f", "degrees fahrenheit", "degree fahrenheit", "deg f", "°f", "°fahrenheit", "deg. f", "degrees f", "degree f" } },
-    { category = "temp", system = "metric", name = "c", std_target = "f", aliases = { "celsius", "celcius", "c", "degrees celsius", "degree celsius", "degrees celcius", "degree celcius", "deg c", "°c", "°celsius", "°celcius", "deg. c", "degrees c", "degree c" } },
+    { category = "temp", system = "imperial", name = "f", std_target = "c", aliases = { "fahrenheit", "f", "degrees fahrenheit", "degree fahrenheit", "deg f", "°f", "°fahrenheit", "ºf", "ºfahrenheit", "°F", "°Fahrenheit", "ºF", "ºFahrenheit", "of", "oF", "0f", "0F", "deg. f", "degrees f", "degree f" } },
+    { category = "temp", system = "metric", name = "c", std_target = "f", aliases = { "celsius", "celcius", "c", "degrees celsius", "degree celsius", "degrees celcius", "degree celcius", "deg c", "°c", "°celsius", "°celcius", "ºc", "ºcelsius", "ºcelcius", "°C", "°Celsius", "°Celcius", "ºC", "ºCelsius", "ºCelcius", "oc", "oC", "0c", "0C", "deg. c", "degrees c", "degree c" } },
 
     -- VOLUME
     { category = "volume", system = "imperial", name = "fl oz", std_target = "ml", aliases = { "fluid ounces", "fluid ounce", "fl oz", "fl%. oz%." } },
@@ -803,7 +810,7 @@ function M.getScanAliases(direction, enabled_categories, lang)
             return true
         end
         -- Always keep universal degree symbols
-        if alias:find("°") then
+        if alias:find("°") or alias:find("º") then
             return true
         end
         -- For non-ASCII: check if it matches the current language's script

@@ -20,12 +20,26 @@ local function log(msg)
     XRayLogger:log("UnitScanner: " .. tostring(msg))
 end
 
+local RANGE_SEPS = {
+    "-",
+    "\226\128\145", -- Non-breaking hyphen U+2011 (‑)
+    "\226\128\146", -- Figure dash U+2012 (‒)
+    "\226\128\147", -- En dash U+2013 (–)
+    "\226\128\148", -- Em dash U+2014 (—)
+    "\226\128\149", -- Horizontal bar U+2015 (―)
+    "\226\136\146", -- Minus sign U+2212 (−)
+    "\239\185\163", -- Small hyphen-minus U+FE63 (﹣)
+    "\239\188\141", -- Fullwidth hyphen-minus U+FF0D (－)
+    "~",
+    "/",
+    "\227\128\156", -- Wave dash U+301C (〜)
+}
+
 local function build_trie(words)
     local trie = {}
     for _, word in ipairs(words) do
         local node = trie
-        for i = 1, #word do
-            local char = word:sub(i, i)
+        for char in word:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
             node[char] = node[char] or {}
             node = node[char]
         end
@@ -470,7 +484,11 @@ local function extend_span_start(doc, unit_start, num_val)
         if ok2 and t then
             if t:find("[\r\n]") or t:find("%.%s") or t:find("%!%s") or t:find("%?%s") then break end
             t = t:gsub("^%s+", ""):gsub("%s+$", ""):lower()
-            local clean_t = t:gsub("[%-,]$", "")
+            local clean_t = t
+            for _, sep in ipairs(RANGE_SEPS) do
+                clean_t = clean_t:gsub(sep .. "%s*$", "")
+            end
+            clean_t = clean_t:gsub("[,]%s*$", "")
             local v = xray_units.parseNumberText(clean_t)
             if v and math.abs(v - num_val) < 0.001 then
                 best_cand = cand
@@ -506,7 +524,7 @@ local function _getSettingsSignature(settings)
     local cat_s = settings.unit_cat_speed ~= false
     local cat_a = settings.unit_cat_area ~= false
     return table.concat({
-        "v23",
+        "v29",
         direction,
         tostring(cat_l), tostring(cat_w), tostring(cat_t),
         tostring(cat_v), tostring(cat_s), tostring(cat_a)
@@ -590,7 +608,7 @@ function M:saveUnitCache()
 end
 
 -- Scan the entire book and cache matches
-function M:scanBookForUnits()
+function M:scanBookForUnits(force)
     if not self.ui or not self.ui.document then return end
     
     local settings = self.ai_helper and self.ai_helper.settings or {}
@@ -599,7 +617,11 @@ function M:scanBookForUnits()
         return
     end
 
-    if self:loadUnitCache() then
+    log("scanBookForUnits starting. Force=" .. tostring(force))
+    local cache_loaded = self:loadUnitCache()
+    log("loadUnitCache returned " .. tostring(cache_loaded))
+    if not force and cache_loaded then
+        log("scanBookForUnits: returning early due to cached hits")
         return
     end
 
@@ -644,14 +666,13 @@ function M:scanBookForUnits()
 
             -- Split unit aliases into ambiguous and unambiguous categories
             local ambiguous_aliases = {}
-            local unambiguous_aliases = {}
+            local word_unambiguous_aliases = {}
+            local non_word_unambiguous_aliases = {}
             for _, alias in ipairs(aliases) do
                 local normalized = alias:lower():gsub("%s+", " ")
                 local base = normalized:gsub("%.+$", "")
-                local first_byte = normalized:byte(1)
-                local starts_with_non_ascii = first_byte and first_byte > 127
                 
-                if base == "in" or base == "m" or base == "l" or base == "g" or base == "f" or base == "t" or base == "c" or starts_with_non_ascii then
+                if base == "in" or base == "m" or base == "l" or base == "g" or base == "f" or base == "t" or base == "c" or base == "oc" or base == "0c" or base == "of" or base == "0f" then
                     if normalized:match("[%w]$") then
                         normalized = normalized .. "\2"
                     end
@@ -660,7 +681,11 @@ function M:scanBookForUnits()
                     if normalized:match("[%w]$") then
                         normalized = normalized .. "\2"
                     end
-                    table.insert(unambiguous_aliases, normalized)
+                    if normalized:match("^[^%w]") then
+                        table.insert(non_word_unambiguous_aliases, normalized)
+                    else
+                        table.insert(word_unambiguous_aliases, normalized)
+                    end
                 end
             end
 
@@ -670,11 +695,20 @@ function M:scanBookForUnits()
                 is_ambig[clean] = true
             end
 
+            -- Combine all unambiguous aliases for digit matching
+            local all_unambiguous = {}
+            for _, a in ipairs(word_unambiguous_aliases) do
+                table.insert(all_unambiguous, a)
+            end
+            for _, a in ipairs(non_word_unambiguous_aliases) do
+                table.insert(all_unambiguous, a)
+            end
+
             local digit_units = ""
-            if #ambiguous_aliases > 0 and #unambiguous_aliases > 0 then
+            if #ambiguous_aliases > 0 and #all_unambiguous > 0 then
                 local ambig_trie = build_trie(ambiguous_aliases)
                 local ambig_trie_regex = trie_to_regex(ambig_trie)
-                local unambig_trie = build_trie(unambiguous_aliases)
+                local unambig_trie = build_trie(all_unambiguous)
                 local unambig_trie_regex = trie_to_regex(unambig_trie)
                 digit_units = ambig_trie_regex .. "|" .. unambig_trie_regex
             elseif #ambiguous_aliases > 0 then
@@ -682,17 +716,26 @@ function M:scanBookForUnits()
                 local ambig_trie_regex = trie_to_regex(ambig_trie)
                 digit_units = ambig_trie_regex
             else
-                local unambig_trie = build_trie(unambiguous_aliases)
+                local unambig_trie = build_trie(all_unambiguous)
                 local unambig_trie_regex = trie_to_regex(unambig_trie)
                 digit_units = unambig_trie_regex
             end
 
-            local pat_digit = "((\\b[0-9]+[0-9\\.,]*|\\.[0-9]+)\\s*(" .. digit_units .. "))"
+            local pat_digit = "(([0-9]+[0-9\\.,]*|\\.[0-9]+)\\s*(" .. digit_units .. "))"
             local pat_word
-            if #unambiguous_aliases > 0 then
-                local unambig_trie = build_trie(unambiguous_aliases)
-                local unambig_trie_regex = trie_to_regex(unambig_trie)
-                pat_word = "(\\b(" .. unambig_trie_regex .. "))"
+            local parts = {}
+            if #word_unambiguous_aliases > 0 then
+                local trie = build_trie(word_unambiguous_aliases)
+                local r = trie_to_regex(trie)
+                table.insert(parts, "\\b(" .. r .. ")")
+            end
+            if #non_word_unambiguous_aliases > 0 then
+                local trie = build_trie(non_word_unambiguous_aliases)
+                local r = trie_to_regex(trie)
+                table.insert(parts, "(" .. r .. ")")
+            end
+            if #parts > 0 then
+                pat_word = "(" .. table.concat(parts, "|") .. ")"
             end
             
             log("scanBookForUnits: pat_digit=[" .. tostring(pat_digit) .. "]")
@@ -739,7 +782,9 @@ function M:scanBookForUnits()
 
             -- Deduplicate overlapping hits by end xpointer (keeps the longest match)
             local unique_hits = {}
+
             for _, hit in ipairs(hits) do
+                log("Processing HIT: matched_text='" .. tostring(hit.matched_text) .. "' prev_text='" .. tostring(hit.prev_text) .. "'")
                 local end_xp = hit["end"]
                 if not unique_hits[end_xp] or #hit.matched_text > #unique_hits[end_xp].matched_text then
                     unique_hits[end_xp] = hit
@@ -767,16 +812,16 @@ function M:scanBookForUnits()
                 return #a > #b
             end)
 
-            -- Construct suffix_map hash table: last_word -> list of full aliases (sorted long -> short)
+            -- Construct suffix_map hash table: alias_lower -> true
             local suffix_map = {}
             for _, alias in ipairs(sorted_aliases) do
                 local alias_lower = alias:gsub("\194\160", " "):gsub("%s+", " ")
-                local last_word = alias_lower:match("([^%s]+)%s*$") or alias_lower
-                suffix_map[last_word] = suffix_map[last_word] or {}
-                table.insert(suffix_map[last_word], alias_lower)
+                suffix_map[alias_lower] = true
             end
 
+
             for _, hit in ipairs(hits) do
+                log("Processing HIT: matched_text='" .. tostring(hit.matched_text) .. "' prev_text='" .. tostring(hit.prev_text) .. "'")
                 local is_range = false
                 local val, num_str
                 local val1, val2
@@ -785,13 +830,12 @@ function M:scanBookForUnits()
                 local matched_text = (hit.matched_text or "")
                 local lower_matched = matched_text:lower():gsub("\194\160", " "):gsub("%s+", " ")
                 
-                -- Extract unit alias using suffix_map lookup
+                -- Extract unit alias using suffix_map lookup by iterating suffixes
                 local matched_alias = nil
-                local last_word = lower_matched:match("([^%s]+)%s*$") or ""
-                local candidates = suffix_map[last_word] or {}
-                for _, alias_lower in ipairs(candidates) do
-                    if lower_matched:sub(-#alias_lower) == alias_lower then
-                        matched_alias = alias_lower
+                for i = 1, #lower_matched do
+                    local suffix = lower_matched:sub(i)
+                    if suffix_map[suffix] then
+                        matched_alias = suffix
                         break
                     end
                 end
@@ -801,7 +845,9 @@ function M:scanBookForUnits()
                 local num_part = matched_text:sub(1, #matched_text - #matched_alias)
                 local p = (hit.prev_text or "") .. num_part
                 p = p:gsub("%s+$", "")
-                p = p:gsub("−", "-"):gsub("–", "-"):gsub("—", "-")
+                for _, sep in ipairs(RANGE_SEPS) do
+                    p = p:gsub(sep, "-")
+                end
                 
                 -- 1. Check for vague quantifiers (e.g. "a few hundred yards")
                 local vague = xray_units.detectVagueQuantifier(p)
@@ -822,8 +868,10 @@ function M:scanBookForUnits()
                         val1 = xray_units.parseNumberText(r1)
                         val2 = xray_units.parseNumberText(r2)
                         if val1 and val2 then
+
                             is_range = true
                             num_str = p:match("([0-9%.%,]+%s*[%-–toor,]+%s*[0-9%.%,]+)$") or (r1 .. "-" .. r2)
+                            log("PARSED RANGE: r1=" .. tostring(r1) .. " r2=" .. tostring(r2) .. " num_str=" .. tostring(num_str))
                         end
                     else
                         -- Try written word range

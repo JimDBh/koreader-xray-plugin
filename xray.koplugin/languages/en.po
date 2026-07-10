@@ -779,6 +779,18 @@ msgstr "This Chapter"
 msgid "this_page"
 msgstr "Section"
 
+msgid "unit_auto_scan_about"
+msgstr "Scanning can take up to 15-20 seconds for large books. This only happens the first time the book is opened, and the results are saved for the future."
+
+msgid "unit_auto_scan_disabled"
+msgstr "Disabled"
+
+msgid "unit_auto_scan_enabled"
+msgstr "Enabled"
+
+msgid "unit_auto_scan_settings"
+msgstr "Auto-Scan Settings"
+
 msgid "unit_conv_direction"
 msgstr "Conversion Direction"
 
@@ -811,6 +823,9 @@ msgstr "Light"
 
 msgid "unit_intensity_medium"
 msgstr "Medium"
+
+msgid "unit_manual_scan_button"
+msgstr "Scan/Rescan"
 
 msgid "unit_style_preview_title"
 msgstr "STYLE PREVIEW"

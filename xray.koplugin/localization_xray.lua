@@ -404,6 +404,11 @@ function Localization:t(key, ...)
             pending_duplicates_prompt = "AI found %d possible duplicate(s) from the last fetch. Review now?",
             review = "Review",
             pair_rejected = "Pair marked as not a duplicate.",
+            unit_auto_scan_settings = "Auto-Scan Settings",
+            unit_auto_scan_enabled = "Enabled",
+            unit_auto_scan_disabled = "Disabled",
+            unit_auto_scan_about = "Scanning can take up to 15-20 seconds for large books. This only happens the first time the book is opened, and the results are saved for the future.",
+            unit_manual_scan_button = "Scan/Rescan",
         }
         translation = fallbacks[key] or key
     end

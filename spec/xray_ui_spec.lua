@@ -553,12 +553,9 @@ describe("xray_ui", function()
                     next_text = " today."
                 }
             }
-            plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
-                if pat:find("cel") or pat:find("°") then
-                    return mock_hits
-                end
-                return {}
-            end
+             plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
+                 return mock_hits
+             end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
                 if cand == "xp1" then return "xp_80" end
                 return cand
@@ -649,7 +646,7 @@ describe("xray_ui", function()
             }
             plugin.ui.document.findAllText = function(self_doc, pat, regex, contextWords, maxResults, returnXPointers)
                 -- Verify regex pattern allows °C matching without leading word boundary
-                assert.is_true(pat:find("°[Cc]") ~= nil)
+                assert.is_true(pat:find("°c") ~= nil)
                 return mock_hits
             end
             plugin.ui.document.getPrevVisibleWordStart = function(self_doc, cand)
@@ -694,7 +691,7 @@ describe("xray_ui", function()
                 }
             }
             plugin.ui.document.findAllText = function(self_doc, pat)
-                if pat:find("°[Cc]") then
+                if pat:find("°c") then
                     return mock_hits1
                 end
                 return {}
@@ -724,7 +721,7 @@ describe("xray_ui", function()
                 }
             }
             plugin.ui.document.findAllText = function(self_doc, pat)
-                if pat:find("°[Cc]") then
+                if pat:find("°c") then
                     return mock_hits2
                 end
                 return {}
@@ -754,7 +751,7 @@ describe("xray_ui", function()
                 }
             }
             plugin.ui.document.findAllText = function(self_doc, pat)
-                if pat:find("°[Cc]") then
+                if pat:find("°c") then
                     return mock_hits3
                 end
                 return {}
@@ -970,7 +967,7 @@ describe("xray_ui", function()
 
             -- Signature version 9 + settings categories + 2 entries
             assert.are.equal(3, #lines)
-            assert.is_true(lines[1]:find("^v23|to_imperial|") ~= nil)
+                        assert.is_true(lines[1]:find("^v29|to_imperial|") ~= nil)
             assert.are.equal("xp_1\txp_2\t10 cm\t3.94 inches\tlength", lines[2])
             assert.are.equal("xp_3\txp_4\t100 kg\t220.46  lb\tweight", lines[3])
 

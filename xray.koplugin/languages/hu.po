@@ -1037,6 +1037,22 @@ msgstr "Ez a fejezet"
 msgid "this_page"
 msgstr "Ez az oldal"
 
+# en-hash: fd380cdfeb02e89fd87e81a03440d1a4
+msgid "unit_auto_scan_about"
+msgstr "Nagyobb könyvek esetén a beolvasás akár 15-20 másodpercig is eltarthat. Ez csak a könyv első megnyitásakor történik meg, és az eredmények mentésre kerülnek a jövőre nézve."
+
+# en-hash: b9f5c797ebbf55adccdd8539a65a0241
+msgid "unit_auto_scan_disabled"
+msgstr "Letiltva"
+
+# en-hash: 00d23a76e43b46dae9ec7aa9dcbebb32
+msgid "unit_auto_scan_enabled"
+msgstr "Engedélyezve"
+
+# en-hash: b1c61b015abaa0f358173ae8aaf8d96e
+msgid "unit_auto_scan_settings"
+msgstr "Automatikus keresés beállításai"
+
 # en-hash: 5b2e3a633a4d820d64aa4356495ab188
 msgid "unit_conv_direction"
 msgstr "Átváltás iránya"
@@ -1080,6 +1096,10 @@ msgstr "Világos"
 # en-hash: 87f8a6ab85c9ced3702b4ea641ad4bb5
 msgid "unit_intensity_medium"
 msgstr "Közepes"
+
+# en-hash: 2e507ae5d58861d457e684dfe05b9593
+msgid "unit_manual_scan_button"
+msgstr "Keresés/Újrakeresés"
 
 # en-hash: 2f59140753baa1e1e8193111db3ed7e1
 msgid "unit_style_preview_title"
