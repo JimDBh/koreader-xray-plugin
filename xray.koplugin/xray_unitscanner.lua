@@ -514,14 +514,24 @@ end
 -- -- Cache file operations
 local DocSettings = require("docsettings")
 
-function M:_getUnitCachePath()
+local function _getResolvedDirection(self)
+    local settings = self.ai_helper and self.ai_helper.settings or {}
+    local direction = settings.unit_conversion_direction or "auto"
+    if direction == "auto" then
+        local lang = self.loc and self.loc:getLanguage() or "en"
+        direction = xray_units.getDefaultDirection(lang)
+    end
+    return direction
+end
+
+function M:_getUnitCachePath(resolved_dir)
     if not self.ui or not self.ui.document or not self.ui.document.file then return nil end
     local sidecar = DocSettings:getSidecarDir(self.ui.document.file)
-    return sidecar .. "/xray_unit_cache.cache"
+    resolved_dir = resolved_dir or _getResolvedDirection(self)
+    return sidecar .. "/xray_unit_cache_" .. resolved_dir .. ".cache"
 end
 
 local function _getSettingsSignature(settings)
-    local direction = settings.unit_conversion_direction or "auto"
     local cat_l = settings.unit_cat_length ~= false
     local cat_w = settings.unit_cat_weight ~= false
     local cat_t = settings.unit_cat_temp ~= false
@@ -529,15 +539,15 @@ local function _getSettingsSignature(settings)
     local cat_s = settings.unit_cat_speed ~= false
     local cat_a = settings.unit_cat_area ~= false
     return table.concat({
-        "v29",
-        direction,
+        "v30",
         tostring(cat_l), tostring(cat_w), tostring(cat_t),
         tostring(cat_v), tostring(cat_s), tostring(cat_a)
     }, "|")
 end
 
-function M:loadUnitCache()
-    local cache_file = self:_getUnitCachePath()
+function M:loadUnitCache(resolved_dir)
+    resolved_dir = resolved_dir or _getResolvedDirection(self)
+    local cache_file = self:_getUnitCachePath(resolved_dir)
     if not cache_file then return false end
     
     local f, err = io.open(cache_file, "r")
@@ -585,8 +595,9 @@ function M:loadUnitCache()
     return true
 end
 
-function M:saveUnitCache()
-    local cache_file = self:_getUnitCachePath()
+function M:saveUnitCache(resolved_dir)
+    resolved_dir = resolved_dir or _getResolvedDirection(self)
+    local cache_file = self:_getUnitCachePath(resolved_dir)
     if not cache_file then return end
     
     local settings = self.ai_helper and self.ai_helper.settings or {}
@@ -623,7 +634,8 @@ function M:scanBookForUnits(force)
     end
 
     log("scanBookForUnits starting. Force=" .. tostring(force))
-    local cache_loaded = self:loadUnitCache()
+    local resolved_dir = _getResolvedDirection(self)
+    local cache_loaded = self:loadUnitCache(resolved_dir)
     log("loadUnitCache returned " .. tostring(cache_loaded))
     if not force and cache_loaded then
         log("scanBookForUnits: returning early due to cached hits")
@@ -1090,7 +1102,7 @@ function M:scanBookForUnits(force)
             local t3 = os.clock()
             log(string.format("scanBookForUnits: Lua processing took %.2fs, %d unit matches", t3 - t_start_lua, #xp_matches))
             log(string.format("scanBookForUnits: TOTAL %.2fs", t3 - t0))
-            self:saveUnitCache()
+            self:saveUnitCache(resolved_dir)
             
             UIManager:show(Notification:new{
                 text = tostring(#self.unit_xp_matches) .. " unit conversions found",

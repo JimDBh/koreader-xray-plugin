@@ -909,11 +909,13 @@ describe("xray_ui", function()
         local test_cache_file = "spec/tmp_test_cache.cache"
 
         before_each(function()
-            os.remove(test_cache_file)
+            os.remove(test_cache_file .. "_to_imperial")
+            os.remove(test_cache_file .. "_to_metric")
         end)
 
         after_each(function()
-            os.remove(test_cache_file)
+            os.remove(test_cache_file .. "_to_imperial")
+            os.remove(test_cache_file .. "_to_metric")
         end)
 
         it("should correctly save and load the tab-separated cache format", function()
@@ -932,8 +934,9 @@ describe("xray_ui", function()
 
             -- Mock _getUnitCachePath
             local original_getUnitCachePath = plugin._getUnitCachePath
-            rawset(plugin, "_getUnitCachePath", function()
-                return test_cache_file
+            rawset(plugin, "_getUnitCachePath", function(this, resolved_dir)
+                resolved_dir = resolved_dir or _getResolvedDirection(this)
+                return test_cache_file .. "_" .. resolved_dir
             end)
 
             plugin.unit_xp_matches = {
@@ -957,7 +960,7 @@ describe("xray_ui", function()
             plugin:saveUnitCache()
 
             -- Verify file contents exist
-            local f = io.open(test_cache_file, "r")
+            local f = io.open(test_cache_file .. "_to_imperial", "r")
             assert.is_not_nil(f)
             local lines = {}
             for line in f:lines() do
@@ -965,9 +968,9 @@ describe("xray_ui", function()
             end
             f:close()
 
-            -- Signature version 9 + settings categories + 2 entries
+            -- Signature version 30 + settings categories + 2 entries
             assert.are.equal(3, #lines)
-                        assert.is_true(lines[1]:find("^v29|to_imperial|") ~= nil)
+            assert.is_true(lines[1]:find("^v30|") ~= nil)
             assert.are.equal("xp_1\txp_2\t10 cm\t3.94 inches\tlength", lines[2])
             assert.are.equal("xp_3\txp_4\t100 kg\t220.46  lb\tweight", lines[3])
 
@@ -982,7 +985,7 @@ describe("xray_ui", function()
             assert.are.equal("220.46  lb", plugin.unit_xp_matches[2].converted)
             assert.are.equal("weight", plugin.unit_xp_matches[2].category)
 
-            -- Test signature mismatch invalidation
+            -- Test signature mismatch invalidation (by checking file path mismatch)
             plugin.ai_helper.settings.unit_conversion_direction = "to_metric"
             local loaded_invalid = plugin:loadUnitCache()
             assert.is_false(loaded_invalid)
