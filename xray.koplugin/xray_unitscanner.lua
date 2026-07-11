@@ -604,6 +604,17 @@ function M:saveUnitCache(resolved_dir)
     local settings = self.ai_helper and self.ai_helper.settings or {}
     local signature = _getSettingsSignature(settings)
     
+    -- Ensure sidecar directory exists before writing
+    local dir = cache_file:match("^(.+)/[^/]+$")
+    if dir then
+        local ok_lfs, lfs = pcall(require, "libs/libkoreader-lfs")
+        if ok_lfs and lfs then
+            if lfs.attributes(dir, "mode") ~= "directory" then
+                lfs.mkdir(dir)
+            end
+        end
+    end
+
     local ok, err = pcall(function()
         local f, open_err = io.open(cache_file, "w")
         if f then
@@ -789,8 +800,14 @@ function M:scanBookForUnits(force)
             log("scanBookForUnits: pat_digit=[" .. tostring(pat_digit) .. "]")
             if pat_word then
                 log("scanBookForUnits: pat_word=[" .. tostring(pat_word) .. "]")
+                local MAX_REGEX_LEN = 4000
+                if #pat_word > MAX_REGEX_LEN then
+                    log("scanBookForUnits: word pattern too large (" .. #pat_word .. " chars), skipping word pass safety check")
+                    pat_word = nil
+                end
             end
 
+            log("scanBookForUnits: checkpoint A — pre findAllText digit")
             local doc = self.ui.document
             local t0 = os.clock()
             local ok1, hits1 = pcall(function()
@@ -798,22 +815,27 @@ function M:scanBookForUnits(force)
                 return doc:findAllText(pat_digit, true, 5, 5000, true)
             end)
             local t1 = os.clock()
-            log(string.format("scanBookForUnits: findAllText (digit) took %.2fs", t1 - t0))
+            log(string.format("scanBookForUnits: checkpoint B — post findAllText digit (took %.2fs), %d hits", t1 - t0, ok1 and hits1 and #hits1 or 0))
 
             local ok2, hits2
             local t2 = t1
             if pat_word then
+                log("scanBookForUnits: checkpoint C — pre findAllText word")
                 ok2, hits2 = pcall(function()
                     return doc:findAllText(pat_word, true, 5, 5000, true)
                 end)
                 t2 = os.clock()
-                log(string.format("scanBookForUnits: findAllText (word) took %.2fs", t2 - t1))
+                log(string.format("scanBookForUnits: checkpoint D — post findAllText word (took %.2fs), %s hits", t2 - t1, tostring(ok2 and hits2 and #hits2 or 0)))
             end
 
-            if (not ok1 or not hits1) and (not pat_word or (not ok2 or not hits2)) then
-                log("scanBookForUnits: findAllText failed: " .. tostring(hits1 or hits2))
+            if not ok1 or not hits1 then
+                log("scanBookForUnits: digit findAllText failed, aborting: " .. tostring(hits1))
                 self:clearUnitUnderlines()
                 return
+            end
+            if pat_word and (not ok2 or not hits2) then
+                log("scanBookForUnits: word findAllText failed (non-fatal, continuing with digit hits): " .. tostring(hits2))
+                hits2 = nil
             end
 
             local hits = {}
@@ -845,7 +867,7 @@ function M:scanBookForUnits(force)
             hits = deduped_hits
 
             local t_start_lua = os.clock()
-            log(string.format("scanBookForUnits: dedup took %.2fs, %d hits", t_start_lua - t2, #hits))
+            log(string.format("scanBookForUnits: checkpoint E — dedup took %.2fs, %d hits", t_start_lua - t2, #hits))
 
             local xp_matches = {}
             local lang = self.loc and self.loc:getLanguage() or "en"
@@ -1128,8 +1150,8 @@ function M:scanBookForUnits(force)
             local t3 = os.clock()
             log(string.format("scanBookForUnits: Lua processing took %.2fs, %d unit matches", t3 - t_start_lua, #xp_matches))
             log(string.format("scanBookForUnits: TOTAL %.2fs", t3 - t0))
-            self:saveUnitCache(resolved_dir)
             
+            log("scanBookForUnits: checkpoint F — pre notification show")
             UIManager:show(Notification:new{
                 text = tostring(#self.unit_xp_matches) .. " unit conversions found",
                 timeout = 3,
@@ -1141,6 +1163,14 @@ function M:scanBookForUnits(force)
                 end
                 UIManager:setDirty(nil, "ui")
             end
+
+            log("scanBookForUnits: checkpoint G — scheduling cache write")
+            UIManager:scheduleIn(0.5, function()
+                if not self.destroyed then
+                    log("scanBookForUnits: checkpoint H — writing cache file")
+                    self:saveUnitCache(resolved_dir)
+                end
+            end)
         end)
         
         self._unit_scan_in_progress = false
