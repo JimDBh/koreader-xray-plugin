@@ -1699,7 +1699,7 @@ function XRayPlugin:showUnitConverterNewFeatureCard()
         }
 
         local description_box = TextBoxWidget:new{
-            text = self.loc:t("unit_conv_new_feature_desc") or "X-Ray now detects measurements (lengths, weights, temperature) in your books and highlights them with a subtle underline. Tap any highlighted unit to see its converted value in a popup tooltip.",
+            text = self.loc:t("unit_conv_new_feature_desc") or "X-Ray now detects measurements (lengths, weights, temperature) in your books and highlights them with a subtle underline. Tap any highlighted unit to see its converted value in a popup tooltip.\n\nNote: A scan is required the first time a book is opened.",
             face = Font:getFace("cfont", ui_font_size),
             width = dialog_w - sc(32),
             alignment = self:isRTL() and "right" or "left",

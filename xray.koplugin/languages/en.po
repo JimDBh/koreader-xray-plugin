@@ -837,7 +837,7 @@ msgid "unit_conv_headline"
 msgstr "Unit Converter"
 
 msgid "unit_conv_new_feature_desc"
-msgstr "X-Ray now detects measurements (lengths, weights, temperature) in your books and highlights them with a subtle underline. Tap any highlighted unit to see its converted value in a popup tooltip."
+msgstr "X-Ray now detects measurements (lengths, weights, temperature) in your books and highlights them with a subtle underline. Tap any highlighted unit to see its converted value in a popup tooltip.\n\nNote: A scan is required the first time a book is opened."
 
 msgid "unit_conv_style_settings"
 msgstr "Style & Underline Settings"

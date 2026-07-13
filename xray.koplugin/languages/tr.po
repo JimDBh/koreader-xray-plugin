@@ -1113,9 +1113,9 @@ msgstr "Birim Dönüştürücüyü Etkinleştir"
 msgid "unit_conv_headline"
 msgstr "📏 Unit Converter"
 
-# en-hash: d613a92045b3198a1985e7ca3d468007
+# en-hash: 63d401a64c232b43a1335ae7e02fb607
 msgid "unit_conv_new_feature_desc"
-msgstr "X-Ray now detects measurements (lengths, weights, temperature) in your books and highlights them with a subtle underline. Tap any highlighted unit to see its converted value in a popup tooltip."
+msgstr "X-Ray artık kitaplarınızdaki ölçümleri (uzunluklar, ağırlıklar, sıcaklık) tespit eder ve bunları ince bir alt çizgiyle vurgular. Dönüştürülmüş değerini bir açılır araç ipucunda görmek için vurgulanan herhangi bir birime dokunun.\n\nNot: Bir kitap ilk açıldığında tarama gereklidir."
 
 # en-hash: 37a611b3aed746b1f20cd611500496f2
 msgid "unit_conv_style_settings"
