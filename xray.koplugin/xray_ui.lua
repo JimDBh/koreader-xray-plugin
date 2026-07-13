@@ -49,6 +49,24 @@ local Size            = require("ui/size")
 
 local DEFAULT_POPUP_FONT_SIZE = 22
 
+-- Returns true if the text contains CJK characters (U+3000–U+9FFF, etc.)
+local function _textHasCJK(text)
+    if type(text) ~= "string" then return false end
+    return text:find("[\228-\234][\128-\191][\128-\191]") ~= nil
+end
+
+-- Returns true if the font family name looks like a CJK font
+local function _isCJKFontFamily(family)
+    if not family then return false end
+    local fl = family:lower()
+    return fl:find("cjk") or fl:find("han") or fl:find("wenquanyi")
+        or fl:find("noto.*jp") or fl:find("noto.*sc") or fl:find("noto.*tc")
+        or fl:find("noto.*kr") or fl:find("source han") or fl:find("adobe")
+        or fl:find("kozuka") or fl:find("hiragino") or fl:find("meiryo")
+        or fl:find("yugothic") or fl:find("simhei") or fl:find("simsun")
+        or fl:find("mingliu") or fl:find("kaiti") or fl:find("fangzheng")
+end
+
 local function _getPopupFontSize(plugin)
     local size
     if plugin and plugin.ui and plugin.ui.font and plugin.ui.font.configurable then
@@ -96,7 +114,32 @@ function XRayBottomPopup:init()
     end
     local Device = require("device")
 
+    -- Check if entity text contains CJK characters
+    local text_has_cjk = false
+    if e.name and _textHasCJK(tostring(e.name)) then
+        text_has_cjk = true
+    elseif e.description and _textHasCJK(tostring(e.description)) then
+        text_has_cjk = true
+    elseif e.biography and _textHasCJK(tostring(e.biography)) then
+        text_has_cjk = true
+    elseif e.definition and _textHasCJK(tostring(e.definition)) then
+        text_has_cjk = true
+    end
+
+    -- If doc_family is CJK or the text contains CJK, apply a smaller scaling factor
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    if is_cjk then
+        -- Scale by 0.55 instead of the default, and apply a maximum cap of 20pt.
+        -- Since the caller passed fs = _getPopupFontSize(plugin), we scale it down.
+        fs = math.max(12, math.min(math.floor(fs * (0.55 / 0.75)), 20))
+    else
+        fs = math.max(12, math.min(fs, 20))
+    end
+
     local function getFontSafe(preferred_family, size)
+        if is_cjk or _isCJKFontFamily(preferred_family) then
+            return Font:getFace("cfont", size)
+        end
         if preferred_family and preferred_family ~= "" then
             -- Resolve the CRE face name to an actual font file path
             local ok, credoc = pcall(require, "document/credocument")
@@ -1073,7 +1116,33 @@ function M:showCharacterDetails(character, opts)
         showBottomPopup(self, character)
         return
     end
-    local fs = _getPopupFontSize(self)
+    local base_fs = _getPopupFontSize(self)
+    local doc_family
+    if self.ui and self.ui.font then
+        doc_family = self.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = false
+    if character.name and _textHasCJK(tostring(character.name)) then
+        text_has_cjk = true
+    elseif character.description and _textHasCJK(tostring(character.description)) then
+        text_has_cjk = true
+    elseif character.biography and _textHasCJK(tostring(character.biography)) then
+        text_has_cjk = true
+    elseif character.definition and _textHasCJK(tostring(character.definition)) then
+        text_has_cjk = true
+    end
+
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 18))
+    else
+        fs = math.max(12, math.min(base_fs, 20))
+    end
     local border_window = (Size.border and Size.border.window) or 1
     local padding_button = (Size.padding and Size.padding.button) or 10
     local padding_default = (Size.padding and Size.padding.default) or 10
@@ -1291,7 +1360,33 @@ function M:showLocationDetails(loc_item, opts)
         showBottomPopup(self, loc_item)
         return
     end
-    local fs = _getPopupFontSize(self)
+    local base_fs = _getPopupFontSize(self)
+    local doc_family
+    if self.ui and self.ui.font then
+        doc_family = self.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = false
+    if loc_item.name and _textHasCJK(tostring(loc_item.name)) then
+        text_has_cjk = true
+    elseif loc_item.description and _textHasCJK(tostring(loc_item.description)) then
+        text_has_cjk = true
+    elseif loc_item.biography and _textHasCJK(tostring(loc_item.biography)) then
+        text_has_cjk = true
+    elseif loc_item.definition and _textHasCJK(tostring(loc_item.definition)) then
+        text_has_cjk = true
+    end
+
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 18))
+    else
+        fs = math.max(12, math.min(base_fs, 20))
+    end
     local border_window = (Size.border and Size.border.window) or 1
     local padding_button = (Size.padding and Size.padding.button) or 10
     local padding_default = (Size.padding and Size.padding.default) or 10
@@ -1439,7 +1534,33 @@ function M:showTermDetails(term, opts)
         showBottomPopup(self, term)
         return
     end
-    local fs = _getPopupFontSize(self)
+    local base_fs = _getPopupFontSize(self)
+    local doc_family
+    if self.ui and self.ui.font then
+        doc_family = self.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = false
+    if term.name and _textHasCJK(tostring(term.name)) then
+        text_has_cjk = true
+    elseif term.description and _textHasCJK(tostring(term.description)) then
+        text_has_cjk = true
+    elseif term.biography and _textHasCJK(tostring(term.biography)) then
+        text_has_cjk = true
+    elseif term.definition and _textHasCJK(tostring(term.definition)) then
+        text_has_cjk = true
+    end
+
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 18))
+    else
+        fs = math.max(12, math.min(base_fs, 20))
+    end
     local border_window = (Size.border and Size.border.window) or 1
     local padding_button = (Size.padding and Size.padding.button) or 10
     local padding_default = (Size.padding and Size.padding.default) or 10
@@ -2435,7 +2556,29 @@ function M:showAuthorInfo()
     local buttontable_width = dialog_width - 2 * border_window - 2 * padding_button
     local title_group_width = buttontable_width - 2 * (padding_default + margin_default)
 
-    local fs = _getPopupFontSize(self)
+    local base_fs = _getPopupFontSize(self)
+    local doc_family
+    if self.ui and self.ui.font then
+        doc_family = self.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = false
+    if self.author_info.name and _textHasCJK(tostring(self.author_info.name)) then
+        text_has_cjk = true
+    elseif self.author_info.description and _textHasCJK(tostring(self.author_info.description)) then
+        text_has_cjk = true
+    end
+
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 18))
+    else
+        fs = math.max(12, math.min(base_fs, 20))
+    end
     local align = self:isRTL() and "right" or "left"
     local vg_components = { align = align }
 
@@ -2701,11 +2844,33 @@ function XRayLogViewer:_rebuild()
     end
 
     local base_fs = _getPopupFontSize(self.ui_instance and self.ui_instance.plugin)
-    local fs = math.max(12, math.floor(base_fs * 0.75))
 
-    local content_face = Font:getFace("infont", fs)
-        or Font:getFace("smallinfont", fs)
-        or Font:getFace("cfont", fs)
+    local doc_family
+    if self.ui_instance and self.ui_instance.plugin and self.ui_instance.plugin.ui and self.ui_instance.plugin.ui.font then
+        doc_family = self.ui_instance.plugin.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = _textHasCJK(text)
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.55), 20))
+    else
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 20))
+    end
+
+    local content_face
+    if is_cjk then
+        content_face = Font:getFace("cfont", fs)
+    else
+        content_face = Font:getFace("infont", fs)
+            or Font:getFace("smallinfont", fs)
+            or Font:getFace("cfont", fs)
+    end
 
     if not content_face then
         content_face = Font:getFace("cfont", fs)
@@ -3136,7 +3301,29 @@ function M:showTimelineEventDetails(ev, opts)
     end
 
     -- (B) ButtonDialog path
-    local fs = _getPopupFontSize(self)
+    local base_fs = _getPopupFontSize(self)
+    local doc_family
+    if self.ui and self.ui.font then
+        doc_family = self.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = false
+    if ev.chapter and _textHasCJK(tostring(ev.chapter)) then
+        text_has_cjk = true
+    elseif ev.event and _textHasCJK(tostring(ev.event)) then
+        text_has_cjk = true
+    end
+
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 18))
+    else
+        fs = math.max(12, math.min(base_fs, 20))
+    end
     local border_window  = (Size.border  and Size.border.window)   or 1
     local padding_button = (Size.padding and Size.padding.button)   or 10
     local padding_default= (Size.padding and Size.padding.default)  or 10
@@ -3257,7 +3444,31 @@ function M:showHistoricalFigureDetails(fig, opts)
         showBottomPopup(self, fig)
         return
     end
-    local fs = _getPopupFontSize(self)
+    local base_fs = _getPopupFontSize(self)
+    local doc_family
+    if self.ui and self.ui.font then
+        doc_family = self.ui.font.font_face
+    end
+    if not doc_family and G_reader_settings then
+        doc_family = G_reader_settings:readSetting("cre_font_family")
+    end
+
+    local text_has_cjk = false
+    if fig.name and _textHasCJK(tostring(fig.name)) then
+        text_has_cjk = true
+    elseif fig.biography and _textHasCJK(tostring(fig.biography)) then
+        text_has_cjk = true
+    elseif fig.description and _textHasCJK(tostring(fig.description)) then
+        text_has_cjk = true
+    end
+
+    local is_cjk = _isCJKFontFamily(doc_family) or text_has_cjk
+    local fs
+    if is_cjk then
+        fs = math.max(12, math.min(math.floor(base_fs * 0.75), 18))
+    else
+        fs = math.max(12, math.min(base_fs, 20))
+    end
     local border_window = (Size.border and Size.border.window) or 1
     local padding_button = (Size.padding and Size.padding.button) or 10
     local padding_default = (Size.padding and Size.padding.default) or 10
