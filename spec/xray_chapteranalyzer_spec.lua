@@ -97,17 +97,34 @@ describe("xray_chapteranalyzer", function()
             assert.are.equal("some mock text extracted", text)
         end)
 
-        it("respects start_page when provided", function()
-            local text = analyzer:getTextForAnalysis(mock_ui, 50000, nil, 80, 10)
+        it("respects start_page when provided within the 60-page window", function()
+            -- current_page = 80, start_page = 30 (diff is 50, within 60-page limit)
+            local text = analyzer:getTextForAnalysis(mock_ui, 50000, nil, 80, 30)
 
-            -- Should call getPageXPointer(10) instead of window fallback
+            -- Should call getPageXPointer(30) instead of window fallback
             assert.are.equal(2, #getPageXPointer_calls)
             assert.are.equal(80, getPageXPointer_calls[1])
-            assert.are.equal(10, getPageXPointer_calls[2])
+            assert.are.equal(30, getPageXPointer_calls[2])
 
             -- Should extract text using the resolved XPointers
             assert.are.equal(1, #getTextFromXPointers_calls)
-            assert.are.equal("xp_page_10", getTextFromXPointers_calls[1].start_xp)
+            assert.are.equal("xp_page_30", getTextFromXPointers_calls[1].start_xp)
+            assert.are.equal("xp_page_80", getTextFromXPointers_calls[1].end_xp)
+            assert.are.equal("some mock text extracted", text)
+        end)
+
+        it("caps start_page to the 60-page window when start_page is too far in the past", function()
+            -- current_page = 80, start_page = 10 (diff is 70, exceeds 60-page limit)
+            local text = analyzer:getTextForAnalysis(mock_ui, 50000, nil, 80, 10)
+
+            -- Should call getPageXPointer(20) because 80 - 60 = 20
+            assert.are.equal(2, #getPageXPointer_calls)
+            assert.are.equal(80, getPageXPointer_calls[1])
+            assert.are.equal(20, getPageXPointer_calls[2])
+
+            -- Should extract text using the resolved XPointers
+            assert.are.equal(1, #getTextFromXPointers_calls)
+            assert.are.equal("xp_page_20", getTextFromXPointers_calls[1].start_xp)
             assert.are.equal("xp_page_80", getTextFromXPointers_calls[1].end_xp)
             assert.are.equal("some mock text extracted", text)
         end)

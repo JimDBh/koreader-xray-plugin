@@ -329,7 +329,17 @@ function XRayPlugin:onReaderReady()
             if self.scanBookForUnits and settings.unit_converter_enabled ~= false then
                 local is_auto = settings.unit_auto_scan_enabled ~= false
                 if is_auto then
-                    self:scanBookForUnits()
+                    local handled = false
+                    if self.triggerBookTypeDetection then
+                        handled = self:triggerBookTypeDetection()
+                    end
+                    if not handled then
+                        self:scanBookForUnits()
+                    end
+                else
+                    if self.triggerBookTypeDetection then
+                        self:triggerBookTypeDetection()
+                    end
                 end
             end
         end
@@ -969,10 +979,24 @@ function XRayPlugin:getSubMenuItems()
                         separator = true,
                     },
                     {
+                        text = self.loc:t("unit_book_type_filter") or "Book Type Filter",
+                        keep_menu_open = true,
+                        sub_item_table_func = function()
+                            return self:getBookTypeFilterMenu()
+                        end
+                    },
+                    {
                         text = self.loc:t("unit_conv_direction") or "Conversion Direction",
                         keep_menu_open = true,
                         callback = function()
                             self:showUnitConversionDirectionSettings()
+                        end
+                    },
+                    {
+                        text = self.loc:t("unit_conv_style_settings") or "Style & Underline Settings",
+                        keep_menu_open = true,
+                        callback = function()
+                            self:showUnitStyleCard()
                         end
                     },
                     {
@@ -1046,13 +1070,6 @@ function XRayPlugin:getSubMenuItems()
                                 end
                             }
                         }
-                    },
-                    {
-                        text = self.loc:t("unit_conv_style_settings") or "Style & Underline Settings",
-                        keep_menu_open = true,
-                        callback = function()
-                            self:showUnitStyleCard()
-                        end
                     }
                 },
                 separator = true,
@@ -2043,6 +2060,312 @@ function XRayPlugin:showUnitConverterNewFeatureCard()
     renderCard()
 end
 
+-- --- Book Type Detection Engine ---
+
+function XRayPlugin:detectBookTypeHeuristic()
+    local book_path = self.ui and self.ui.document and self.ui.document.file
+    if not book_path then return "unknown" end
+    
+    local ext = book_path:match("%.([^%.]+)$")
+    if ext then
+        ext = ext:lower()
+        if ext == "cbz" or ext == "cbr" or ext == "cb7" then
+            return "manga" -- archive format for comics/manga
+        end
+    end
+
+    local props = self.ui.document:getProps() or {}
+    local subjects = props.subject or props.Subject or ""
+    local title = (props.title or ""):lower()
+    local filename = (book_path:match("([^/\\]+)$") or ""):lower()
+
+    local manga_kw = { "manga", "graphic novel", "comic", "omnibus", "vol%.", "chapter" }
+    local poetry_kw = { "poetry", "poems", "verse", "anthology" }
+    local cookbook_kw = { "cookbook", "cook book", "recipe", "cooking" }
+    local textbook_kw = { "textbook", "text book", "academic", "manual" }
+    local travel_kw = { "travel guide", "lonely planet", "rough guide" }
+
+    local function match_keywords(str, kw_list)
+        if not str or str == "" then return false end
+        str = str:lower()
+        for _, kw in ipairs(kw_list) do
+            if str:find(kw) then return true end
+        end
+        return false
+    end
+
+    if match_keywords(subjects, manga_kw) or match_keywords(title, manga_kw) or match_keywords(filename, manga_kw) then
+        return "manga"
+    end
+    if match_keywords(subjects, poetry_kw) or match_keywords(title, poetry_kw) or match_keywords(filename, poetry_kw) then
+        return "poetry"
+    end
+    if match_keywords(subjects, cookbook_kw) or match_keywords(title, cookbook_kw) or match_keywords(filename, cookbook_kw) then
+        return "cookbook"
+    end
+    if match_keywords(subjects, textbook_kw) or match_keywords(title, textbook_kw) or match_keywords(filename, textbook_kw) then
+        return "textbook"
+    end
+    if match_keywords(subjects, travel_kw) or match_keywords(title, travel_kw) or match_keywords(filename, travel_kw) then
+        return "travel"
+    end
+
+    return "unknown"
+end
+
+function XRayPlugin:getEffectiveBookType()
+    local cached = self.book_data or {}
+    if cached.book_type_label_override and cached.book_type_label_override ~= "auto" then
+        return cached.book_type_label_override
+    end
+    if cached.book_type_label and cached.book_type_label ~= "" then
+        return cached.book_type_label
+    end
+    local heur = self:detectBookTypeHeuristic()
+    if heur and heur ~= "unknown" then
+        return heur
+    end
+    return "unknown"
+end
+
+function XRayPlugin:triggerBookTypeDetection()
+    if not self.ui or not self.ui.document then return false end
+    if not self.book_data then
+        self.book_data = {}
+    end
+    local cached = self.book_data
+    if cached.book_type_label and cached.book_type_label ~= "" then
+        return false -- already detected
+    end
+
+    -- Run Layer 1 & 2 heuristic
+    local heur = self:detectBookTypeHeuristic()
+    if heur ~= "unknown" then
+        cached.book_type_label = heur
+        self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
+        if self.scanBookForUnits then self:scanBookForUnits() end
+        return true
+    end
+
+    -- Run Layer 3 LLM classification if API keys exist
+    if not self.ai_helper:hasApiKey() then
+        return false
+    end
+
+    self:log("XRayPlugin: Starting Layer 3 AI book type detection in background...")
+    local DataStorage = require("datastorage")
+    local result_file = DataStorage:getDataDir() .. "/xray/book_type_detect_res.json"
+    
+    local props = self.ui.document:getProps() or {}
+    local title = props.title or "Unknown"
+    local author = props.authors or "Unknown"
+    local series = props.series or props.Series or "None"
+    local description = props.subject or props.Subject or "None"
+
+    local pid, err_c, err_m = self.ai_helper:detectBookTypeAsync(title, author, series, description, result_file)
+    if not pid then
+        self:log("XRayPlugin: Book type AI detection trigger failed: " .. tostring(err_m))
+        return false
+    end
+
+    local function pollResult()
+        if self.destroyed then return end
+        local res = self.ai_helper:checkAsyncResult(result_file)
+        if res == "pending" then
+            UIManager:scheduleIn(1, pollResult)
+        elseif type(res) == "table" and res.book_type_label then
+            self:log("XRayPlugin: Book type AI detection complete! Result: " .. tostring(res.book_type_label))
+            if not self.book_data then
+                self.book_data = {}
+            end
+            self.book_data.book_type_label = res.book_type_label
+            self.cache_manager:asyncSaveCache(self.ui.document.file, self.book_data)
+            if self.scanBookForUnits then self:scanBookForUnits() end
+        else
+            self:log("XRayPlugin: Book type AI detection returned invalid or empty result: " .. tostring(res))
+        end
+    end
+    UIManager:scheduleIn(1, pollResult)
+    return false
+end
+
+-- --- Book Type Filter Settings Card ---
+
+-- --- Book Type Filter Dynamic Sub-Menus ---
+
+function XRayPlugin:handleBookTypeOverride(val)
+    if not self.book_data then
+        self.book_data = {}
+    end
+    self.book_data.book_type_label_override = val
+    self.cache_manager:asyncSaveCache(self.ui.document.file, self.book_data)
+
+    local cache_loaded = false
+    if self.loadUnitCache then
+        cache_loaded = self:loadUnitCache()
+    end
+
+    local settings = self.ai_helper and self.ai_helper.settings or {}
+    local disabled_types = settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+    local is_disabled = false
+    local book_type = self:getEffectiveBookType()
+    for _, t in ipairs(disabled_types) do
+        if t == book_type then
+            is_disabled = true
+            break
+        end
+    end
+
+    if is_disabled then
+        if self.clearUnitUnderlines then self:clearUnitUnderlines() end
+    elseif not cache_loaded then
+        self:closeAllMenus()
+        if self.scanBookForUnits then self:scanBookForUnits() end
+    else
+        if self.applyUnitUnderlines then self:applyUnitUnderlines() end
+    end
+end
+
+function XRayPlugin:showBookTypeOverrideCard(refresh_parent)
+    local XRaySettingsCard = require(plugin_path .. "xray_settings_card")
+    local book_types = {
+        { key = "prose_fiction", text = self.loc:t("unit_book_type_prose_fiction") or "Fiction (Novels, Stories)" },
+        { key = "prose_nonfiction", text = self.loc:t("unit_book_type_prose_nonfiction") or "Non-Fiction (History, Science, etc.)" },
+        { key = "manga", text = self.loc:t("unit_book_type_manga") or "Manga" },
+        { key = "graphic_novel", text = self.loc:t("unit_book_type_graphic_novel") or "Graphic Novels & Comics" },
+        { key = "children", text = self.loc:t("unit_book_type_children") or "Children's Books" },
+        { key = "poetry", text = self.loc:t("unit_book_type_poetry") or "Poetry & Verse" },
+        { key = "cookbook", text = self.loc:t("unit_book_type_cookbook") or "Cookbooks & Recipes" },
+        { key = "textbook", text = self.loc:t("unit_book_type_textbook") or "Textbooks & Academic" },
+        { key = "travel", text = self.loc:t("unit_book_type_travel") or "Travel Guides" },
+        { key = "unknown", text = self.loc:t("unit_book_type_unknown") or "Unknown/Other" },
+    }
+
+    local override_opts = {
+        { text = self.loc:t("unit_book_type_auto") or "Auto-detect", value = "auto" }
+    }
+    for _, bt in ipairs(book_types) do
+        table.insert(override_opts, { text = bt.text, value = bt.key })
+    end
+
+    XRaySettingsCard.show(self, {
+        title = self.loc:t("unit_book_type_override") or "Override for this book",
+        options = override_opts,
+        get_current_func = function()
+            local cached = self.book_data or {}
+            return cached.book_type_label_override or "auto"
+        end,
+        save_func = function(val)
+            self:handleBookTypeOverride(val)
+            if refresh_parent then refresh_parent() end
+        end,
+    })
+end
+
+function XRayPlugin:getBookTypeFilterMenu()
+    local book_types = {
+        { key = "prose_fiction", text = self.loc:t("unit_book_type_prose_fiction") or "Fiction (Novels, Stories)" },
+        { key = "prose_nonfiction", text = self.loc:t("unit_book_type_prose_nonfiction") or "Non-Fiction (History, Science, etc.)" },
+        { key = "manga", text = self.loc:t("unit_book_type_manga") or "Manga" },
+        { key = "graphic_novel", text = self.loc:t("unit_book_type_graphic_novel") or "Graphic Novels & Comics" },
+        { key = "children", text = self.loc:t("unit_book_type_children") or "Children's Books" },
+        { key = "poetry", text = self.loc:t("unit_book_type_poetry") or "Poetry & Verse" },
+        { key = "cookbook", text = self.loc:t("unit_book_type_cookbook") or "Cookbooks & Recipes" },
+        { key = "textbook", text = self.loc:t("unit_book_type_textbook") or "Textbooks & Academic" },
+        { key = "travel", text = self.loc:t("unit_book_type_travel") or "Travel Guides" },
+        { key = "unknown", text = self.loc:t("unit_book_type_unknown") or "Unknown/Other" },
+    }
+
+    local function getDetectedStr()
+        local cached = self.book_data or {}
+        local raw = cached.book_type_label
+        local via = "AI"
+        if not raw or raw == "" then
+            raw = self:detectBookTypeHeuristic()
+            via = "Heuristic"
+        end
+        local label = "Unknown/Other"
+        for _, bt in ipairs(book_types) do
+            if bt.key == raw then label = bt.text; break end
+        end
+        return string.format("%s (%s)", label, via)
+    end
+
+    local menu = {
+        {
+            text = (self.loc:t("unit_book_type_detected") or "Detected Book Type") .. ": " .. getDetectedStr(),
+            enabled = false,
+        },
+        {
+            text = self.loc:t("unit_book_type_override") or "Override for this book",
+            keep_menu_open = true,
+            callback = function()
+                self:showBookTypeOverrideCard()
+            end
+        },
+        {
+            text = self.loc:t("unit_book_type_manage") or "Manage Enabled Types",
+            keep_menu_open = true,
+            sub_item_table_func = function()
+                local opts = {}
+                for _, bt in ipairs(book_types) do
+                    table.insert(opts, {
+                        text = bt.text,
+                        checked_func = function()
+                            local disabled = self.ai_helper.settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+                            local disabled_map = {}
+                            for _, k in ipairs(disabled) do disabled_map[k] = true end
+                            return not disabled_map[bt.key]
+                        end,
+                        callback = function()
+                            local disabled = self.ai_helper.settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+                            local new_disabled = {}
+                            local found = false
+                            for _, k in ipairs(disabled) do
+                                if k == bt.key then
+                                    found = true
+                                else
+                                    table.insert(new_disabled, k)
+                                end
+                            end
+                            if not found then
+                                table.insert(new_disabled, bt.key)
+                            end
+                            self.ai_helper:saveSettings({ unit_disabled_book_types = new_disabled })
+
+                            local cache_loaded = false
+                            if self.loadUnitCache then
+                                cache_loaded = self:loadUnitCache()
+                            end
+
+                            local is_disabled = false
+                            local book_type = self:getEffectiveBookType()
+                            for _, t in ipairs(new_disabled) do
+                                if t == book_type then
+                                    is_disabled = true
+                                    break
+                                end
+                            end
+
+                            if is_disabled then
+                                if self.clearUnitUnderlines then self:clearUnitUnderlines() end
+                            elseif not cache_loaded then
+                                self:closeAllMenus()
+                                if self.scanBookForUnits then self:scanBookForUnits() end
+                            else
+                                if self.applyUnitUnderlines then self:applyUnitUnderlines() end
+                            end
+                        end
+                    })
+                end
+                return opts
+            end
+        }
+    }
+    return menu
+end
+
 -- Extracted functions are now loaded via mixins (xray_data, xray_ui, xray_fetch, xray_mentions)
 
 return XRayPlugin
+

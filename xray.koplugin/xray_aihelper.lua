@@ -2072,4 +2072,25 @@ function AIHelper:findDuplicatesAsync(title, author, entities, entity_type_label
     return pid
 end
 
+function AIHelper:detectBookTypeAsync(title, author, series, description, result_file)
+    if not self.prompts then self:loadLanguage() end
+    local template = self.prompts.book_type_detect
+    if not template then return nil, "no_prompt", "book_type_detect prompt missing" end
+
+    local prompt = string.format(template,
+        title or "Unknown",
+        author or "Unknown",
+        series or "None",
+        description or "None"
+    )
+    prompt = self:sanitize_utf8(prompt)
+
+    local requests, error_code, error_msg = self:buildComprehensiveRequest(nil, nil, nil, prompt)
+    if not requests then return nil, error_code or "error_build", error_msg or "Failed to build request" end
+
+    local pid = self:makeRequestAsync(requests, result_file)
+    return pid
+end
+
 return AIHelper
+

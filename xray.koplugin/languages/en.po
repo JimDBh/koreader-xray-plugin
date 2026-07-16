@@ -704,9 +704,6 @@ msgstr "Medium"
 msgid "reasoning_unset"
 msgstr "Unset (Default)"
 
-msgid "refresh"
-msgstr "Refresh"
-
 msgid "reject_pair"
 msgstr "Reject"
 
@@ -814,6 +811,54 @@ msgstr "Enabled"
 
 msgid "unit_auto_scan_settings"
 msgstr "Auto-Scan Settings"
+
+msgid "unit_book_type_auto"
+msgstr "Auto-detect"
+
+msgid "unit_book_type_children"
+msgstr "Children's Books"
+
+msgid "unit_book_type_cookbook"
+msgstr "Cookbooks & Recipes"
+
+msgid "unit_book_type_detected"
+msgstr "Detected Book Type"
+
+msgid "unit_book_type_filter"
+msgstr "Book Type Filter"
+
+msgid "unit_book_type_graphic_novel"
+msgstr "Graphic Novels & Comics"
+
+msgid "unit_book_type_manage"
+msgstr "Manage Enabled Types"
+
+msgid "unit_book_type_manage_about"
+msgstr "Manage which book types trigger unit scanning. Disabling a type stops unit conversion outlines for all books classified under that format globally."
+
+msgid "unit_book_type_manga"
+msgstr "Manga"
+
+msgid "unit_book_type_override"
+msgstr "Override for this book"
+
+msgid "unit_book_type_poetry"
+msgstr "Poetry & Verse"
+
+msgid "unit_book_type_prose_fiction"
+msgstr "Fiction (Novels, Stories)"
+
+msgid "unit_book_type_prose_nonfiction"
+msgstr "Non-Fiction (History, Science, etc.)"
+
+msgid "unit_book_type_textbook"
+msgstr "Textbooks & Academic"
+
+msgid "unit_book_type_travel"
+msgstr "Travel Guides"
+
+msgid "unit_book_type_unknown"
+msgstr "Unknown/Other"
 
 msgid "unit_conv_direction"
 msgstr "Conversion Direction"

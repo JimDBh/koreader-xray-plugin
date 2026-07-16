@@ -335,6 +335,8 @@ local function _checkSettingsChanged(self)
     local cat_v = settings.unit_cat_volume ~= false
     local cat_s = settings.unit_cat_speed ~= false
     local cat_a = settings.unit_cat_area ~= false
+    local book_type = self.getEffectiveBookType and self:getEffectiveBookType() or "unknown"
+    local disabled_types = table.concat(settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }, ",")
 
     if self.last_settings_state == nil then
         self.last_settings_state = {
@@ -348,6 +350,8 @@ local function _checkSettingsChanged(self)
             cat_v = cat_v,
             cat_s = cat_s,
             cat_a = cat_a,
+            book_type = book_type,
+            disabled_types = disabled_types,
         }
         return false
     end
@@ -362,7 +366,9 @@ local function _checkSettingsChanged(self)
                     (state.cat_t ~= cat_t) or
                     (state.cat_v ~= cat_v) or
                     (state.cat_s ~= cat_s) or
-                    (state.cat_a ~= cat_a)
+                    (state.cat_a ~= cat_a) or
+                    (state.book_type ~= book_type) or
+                    (state.disabled_types ~= disabled_types)
 
     if changed then
         self.last_settings_state = {
@@ -376,6 +382,8 @@ local function _checkSettingsChanged(self)
             cat_v = cat_v,
             cat_s = cat_s,
             cat_a = cat_a,
+            book_type = book_type,
+            disabled_types = disabled_types,
         }
     end
 
@@ -474,7 +482,7 @@ function M:_getUnitCachePath(resolved_dir)
     return sidecar .. "/xray_unit_cache_" .. resolved_dir .. ".cache"
 end
 
-local function _getSettingsSignature(settings)
+local function _getSettingsSignature(self, settings)
     local cat_l = settings.unit_cat_length ~= false
     local cat_w = settings.unit_cat_weight ~= false
     local cat_t = settings.unit_cat_temp ~= false
@@ -482,9 +490,9 @@ local function _getSettingsSignature(settings)
     local cat_s = settings.unit_cat_speed ~= false
     local cat_a = settings.unit_cat_area ~= false
     return table.concat({
-        "v30",
+        "v31",
         tostring(cat_l), tostring(cat_w), tostring(cat_t),
-        tostring(cat_v), tostring(cat_s), tostring(cat_a)
+        tostring(cat_v), tostring(cat_s), tostring(cat_a),
     }, "|")
 end
 
@@ -503,7 +511,7 @@ function M:loadUnitCache(resolved_dir)
     end
     
     local settings = self.ai_helper and self.ai_helper.settings or {}
-    local current_sig = _getSettingsSignature(settings)
+    local current_sig = _getSettingsSignature(self, settings)
     if signature ~= current_sig then
         log("loadUnitCache: Cache settings signature mismatch, ignoring")
         f:close()
@@ -544,7 +552,7 @@ function M:saveUnitCache(resolved_dir)
     if not cache_file then return end
     
     local settings = self.ai_helper and self.ai_helper.settings or {}
-    local signature = _getSettingsSignature(settings)
+    local signature = _getSettingsSignature(self, settings)
     
     -- Ensure sidecar directory exists before writing
     local dir = cache_file:match("^(.+)/[^/]+$")
@@ -590,6 +598,24 @@ function M:scanBookForUnits(force)
     if settings.unit_converter_enabled == false or settings.unit_underline_enabled == false then
         self:clearUnitUnderlines()
         return
+    end
+
+    -- Book Type Filtering Gate
+    if self.getEffectiveBookType then
+        local book_type = self:getEffectiveBookType()
+        local disabled_types = settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+        local is_disabled = false
+        for _, t in ipairs(disabled_types) do
+            if t == book_type then
+                is_disabled = true
+                break
+            end
+        end
+        if is_disabled then
+            self:clearUnitUnderlines()
+            log("scanBookForUnits: skipped scan since effective book type '" .. book_type .. "' is disabled.")
+            return
+        end
     end
 
     -- Proactively cancel any running background AI processes to prioritize the unit scan

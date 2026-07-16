@@ -494,6 +494,17 @@ function ChapterAnalyzer:getTextForAnalysis(ui, max_len, progress_callback, curr
             if start_page and start_page > 1 then
                 AIHelper:log("ChapterAnalyzer: getTextForAnalysis - incremental mode from page " .. tostring(start_page))
                 
+                -- Cap the window: never look back more than 60 pages regardless of start_page.
+                -- getTextFromXPointers is synchronous and blocking; a large span freezes the UI
+                -- on long books (e.g. page 460 of a large EPUB).
+                local current_p = current_page or 1
+                local max_lookback = 60
+                local capped_start = math.max(start_page, current_p - max_lookback)
+                if capped_start > start_page then
+                    AIHelper:log("ChapterAnalyzer: Capping incremental start_page from " .. tostring(start_page) .. " to " .. tostring(capped_start) .. " (60-page window)")
+                    start_page = capped_start
+                end
+
                 -- Method 1: Use getPageXPointer (fast, no flash)
                 if ui.document.getPageXPointer then
                     start_xp = ui.document:getPageXPointer(start_page)

@@ -413,6 +413,22 @@ function Localization:t(key, ...)
             unit_underline_double = "Double",
             unit_scanning_book = "Scanning book for units...",
             unit_scanning_title = "X-Ray: Unit Converter",
+            unit_book_type_filter = "Book Type Filter",
+            unit_book_type_detected = "Detected Book Type",
+            unit_book_type_override = "Override for this book",
+            unit_book_type_auto = "Auto-detect",
+            unit_book_type_manage = "Manage Enabled Types",
+            unit_book_type_prose_fiction = "Fiction (Novels, Stories)",
+            unit_book_type_prose_nonfiction = "Non-Fiction (History, Science, etc.)",
+            unit_book_type_manga = "Manga",
+            unit_book_type_graphic_novel = "Graphic Novels & Comics",
+            unit_book_type_children = "Children's Books",
+            unit_book_type_poetry = "Poetry & Verse",
+            unit_book_type_cookbook = "Cookbooks & Recipes",
+            unit_book_type_textbook = "Textbooks & Academic",
+            unit_book_type_travel = "Travel Guides",
+            unit_book_type_unknown = "Unknown/Other",
+            unit_book_type_manage_about = "Manage which book types trigger unit scanning. Disabling a type stops unit conversion outlines for all books classified under that format globally.",
         }
         translation = fallbacks[key] or key
     end
