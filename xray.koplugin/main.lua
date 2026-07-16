@@ -329,11 +329,9 @@ function XRayPlugin:onReaderReady()
             if self.scanBookForUnits and settings.unit_converter_enabled ~= false then
                 local is_auto = settings.unit_auto_scan_enabled ~= false
                 if is_auto then
-                    local handled = false
                     if self.triggerBookTypeDetection then
-                        handled = self:triggerBookTypeDetection()
-                    end
-                    if not handled then
+                        self:triggerBookTypeDetection()
+                    else
                         self:scanBookForUnits()
                     end
                 else
@@ -2064,13 +2062,13 @@ end
 
 function XRayPlugin:detectBookTypeHeuristic()
     local book_path = self.ui and self.ui.document and self.ui.document.file
-    if not book_path then return "unknown" end
+    if not book_path then return "unknown", false end
     
     local ext = book_path:match("%.([^%.]+)$")
     if ext then
         ext = ext:lower()
         if ext == "cbz" or ext == "cbr" or ext == "cb7" then
-            return "manga" -- archive format for comics/manga
+            return "manga", true -- archive format for comics/manga: highly confident
         end
     end
 
@@ -2084,6 +2082,12 @@ function XRayPlugin:detectBookTypeHeuristic()
     local cookbook_kw = { "cookbook", "cook book", "recipe", "cooking" }
     local textbook_kw = { "textbook", "text book", "academic", "manual" }
     local travel_kw = { "travel guide", "lonely planet", "rough guide" }
+    local fiction_kw = { "fiction", "novel", "fantasy", "thriller", "mystery", "romance",
+                         "horror", "science fiction", "sci%-fi", "literary", "adventure",
+                         "short stor", "young adult", "ya fiction" }
+    local nonfiction_kw = { "nonfiction", "non%-fiction", "history", "biography", "memoir",
+                            "autobiography", "science", "self%-help", "psychology", "economics",
+                            "philosophy", "true crime", "politics", "essay" }
 
     local function match_keywords(str, kw_list)
         if not str or str == "" then return false end
@@ -2094,23 +2098,37 @@ function XRayPlugin:detectBookTypeHeuristic()
         return false
     end
 
-    if match_keywords(subjects, manga_kw) or match_keywords(title, manga_kw) or match_keywords(filename, manga_kw) then
-        return "manga"
-    end
-    if match_keywords(subjects, poetry_kw) or match_keywords(title, poetry_kw) or match_keywords(filename, poetry_kw) then
-        return "poetry"
-    end
-    if match_keywords(subjects, cookbook_kw) or match_keywords(title, cookbook_kw) or match_keywords(filename, cookbook_kw) then
-        return "cookbook"
-    end
-    if match_keywords(subjects, textbook_kw) or match_keywords(title, textbook_kw) or match_keywords(filename, textbook_kw) then
-        return "textbook"
-    end
-    if match_keywords(subjects, travel_kw) or match_keywords(title, travel_kw) or match_keywords(filename, travel_kw) then
-        return "travel"
+    -- 1. Niche checks
+    if match_keywords(subjects, manga_kw) then return "manga", true end
+    if match_keywords(title, manga_kw) or match_keywords(filename, manga_kw) then return "manga", false end
+
+    if match_keywords(subjects, poetry_kw) then return "poetry", true end
+    if match_keywords(title, poetry_kw) or match_keywords(filename, poetry_kw) then return "poetry", false end
+
+    if match_keywords(subjects, cookbook_kw) then return "cookbook", true end
+    if match_keywords(title, cookbook_kw) or match_keywords(filename, cookbook_kw) then return "cookbook", false end
+
+    if match_keywords(subjects, textbook_kw) then return "textbook", true end
+    if match_keywords(title, textbook_kw) or match_keywords(filename, textbook_kw) then return "textbook", false end
+
+    if match_keywords(subjects, travel_kw) then return "travel", true end
+    if match_keywords(title, travel_kw) or match_keywords(filename, travel_kw) then return "travel", false end
+
+    -- 2. Fiction / Non-Fiction positive checks
+    if match_keywords(subjects, fiction_kw) then return "prose_fiction", true end
+    if match_keywords(title, fiction_kw) or match_keywords(filename, fiction_kw) then return "prose_fiction", false end
+
+    if match_keywords(subjects, nonfiction_kw) then return "prose_nonfiction", true end
+    if match_keywords(title, nonfiction_kw) or match_keywords(filename, nonfiction_kw) then return "prose_nonfiction", false end
+
+    -- 3. File extension fallback
+    if ext then
+        if ext == "epub" or ext == "mobi" or ext == "azw" or ext == "azw3" or ext == "fb2" or ext == "txt" then
+            return "prose_fiction", false -- default to prose fiction (low confidence guess)
+        end
     end
 
-    return "unknown"
+    return "unknown", false
 end
 
 function XRayPlugin:getEffectiveBookType()
@@ -2129,27 +2147,124 @@ function XRayPlugin:getEffectiveBookType()
 end
 
 function XRayPlugin:triggerBookTypeDetection()
-    if not self.ui or not self.ui.document then return false end
+    if not self.ui or not self.ui.document then return true end
     if not self.book_data then
         self.book_data = {}
     end
     local cached = self.book_data
-    if cached.book_type_label and cached.book_type_label ~= "" then
-        return false -- already detected
+
+    -- Check if we already have a unit cache first to avoid scans
+    local has_unit_cache = false
+    if self.loadUnitCache then
+        has_unit_cache = self:loadUnitCache()
     end
 
-    -- Run Layer 1 & 2 heuristic
-    local heur = self:detectBookTypeHeuristic()
-    if heur ~= "unknown" then
-        cached.book_type_label = heur
-        self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
-        if self.scanBookForUnits then self:scanBookForUnits() end
+    local function checkAndTriggerScan()
+        if has_unit_cache then
+            -- Just apply underlines, do not rescan
+            if self.applyUnitUnderlines then self:applyUnitUnderlines() end
+        else
+            -- Check if current type is disabled before scanning
+            local settings = self.ai_helper and self.ai_helper.settings or {}
+            local disabled_types = settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+            local book_type = self:getEffectiveBookType()
+            local is_disabled = false
+            for _, t in ipairs(disabled_types) do
+                if t == book_type then
+                    is_disabled = true
+                    break
+                end
+            end
+            if is_disabled then
+                if self.clearUnitUnderlines then self:clearUnitUnderlines() end
+            else
+                if self.scanBookForUnits then self:scanBookForUnits() end
+            end
+        end
+    end
+
+    if cached.book_type_label and cached.book_type_label ~= "" then
+        checkAndTriggerScan()
+        -- If the cached label was not detected by AI, check if we should refine it via AI background process
+        if not cached.book_type_detected_by_ai and self.ai_helper:hasApiKey() then
+            -- Trigger AI in background to refine low-confidence or format-fallback guesses
+            local DataStorage = require("datastorage")
+            local result_file = DataStorage:getDataDir() .. "/xray/book_type_detect_res.json"
+            local props = self.ui.document:getProps() or {}
+            local title = props.title or "Unknown"
+            local author = props.authors or "Unknown"
+            local series = props.series or props.Series or "None"
+            local description = props.subject or props.Subject or "None"
+            local pid = self.ai_helper:detectBookTypeAsync(title, author, series, description, result_file)
+            if pid then
+                local function pollResult()
+                    if self.destroyed then return end
+                    local res = self.ai_helper:checkAsyncResult(result_file)
+                    if res == "pending" then
+                        UIManager:scheduleIn(1, pollResult)
+                    elseif type(res) == "table" and res.book_type_label then
+                        cached.book_type_label = res.book_type_label
+                        cached.book_type_detected_by_ai = true
+                        self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
+                    end
+                end
+                UIManager:scheduleIn(1, pollResult)
+            end
+        end
         return true
     end
 
-    -- Run Layer 3 LLM classification if API keys exist
+    -- Run Layer 1 & 2 heuristic
+    local heur, is_confident = self:detectBookTypeHeuristic()
+    if heur ~= "unknown" then
+        cached.book_type_label = heur
+        if is_confident then
+            cached.book_type_detected_by_ai = false -- high confidence heuristic, no AI needed
+            self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
+            checkAndTriggerScan()
+            return true
+        else
+            -- Low confidence heuristic, we save it as a starting point and scan
+            cached.book_type_detected_by_ai = false
+            self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
+            checkAndTriggerScan()
+            
+            -- Run Layer 3 AI background refinement since confidence is low
+            if not self.ai_helper:hasApiKey() then
+                return true
+            end
+            self:log("XRayPlugin: Starting Layer 3 AI book type refinement in background...")
+            local DataStorage = require("datastorage")
+            local result_file = DataStorage:getDataDir() .. "/xray/book_type_detect_res.json"
+            local props = self.ui.document:getProps() or {}
+            local title = props.title or "Unknown"
+            local author = props.authors or "Unknown"
+            local series = props.series or props.Series or "None"
+            local description = props.subject or props.Subject or "None"
+            local pid = self.ai_helper:detectBookTypeAsync(title, author, series, description, result_file)
+            if pid then
+                local function pollResult()
+                    if self.destroyed then return end
+                    local res = self.ai_helper:checkAsyncResult(result_file)
+                    if res == "pending" then
+                        UIManager:scheduleIn(1, pollResult)
+                    elseif type(res) == "table" and res.book_type_label then
+                        self:log("XRayPlugin: Book type AI refinement complete! Result: " .. tostring(res.book_type_label))
+                        cached.book_type_label = res.book_type_label
+                        cached.book_type_detected_by_ai = true
+                        self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
+                    end
+                end
+                UIManager:scheduleIn(1, pollResult)
+            end
+            return true
+        end
+    end
+
+    -- Run Layer 3 LLM classification directly if API keys exist and heuristic was unknown
     if not self.ai_helper:hasApiKey() then
-        return false
+        checkAndTriggerScan()
+        return true
     end
 
     self:log("XRayPlugin: Starting Layer 3 AI book type detection in background...")
@@ -2165,7 +2280,8 @@ function XRayPlugin:triggerBookTypeDetection()
     local pid, err_c, err_m = self.ai_helper:detectBookTypeAsync(title, author, series, description, result_file)
     if not pid then
         self:log("XRayPlugin: Book type AI detection trigger failed: " .. tostring(err_m))
-        return false
+        checkAndTriggerScan()
+        return true
     end
 
     local function pollResult()
@@ -2175,18 +2291,40 @@ function XRayPlugin:triggerBookTypeDetection()
             UIManager:scheduleIn(1, pollResult)
         elseif type(res) == "table" and res.book_type_label then
             self:log("XRayPlugin: Book type AI detection complete! Result: " .. tostring(res.book_type_label))
-            if not self.book_data then
-                self.book_data = {}
+            cached.book_type_label = res.book_type_label
+            cached.book_type_detected_by_ai = true
+            self.cache_manager:asyncSaveCache(self.ui.document.file, cached)
+            -- Check scan triggers again now that AI classification finished
+            local has_unit_cache_now = false
+            if self.loadUnitCache then
+                has_unit_cache_now = self:loadUnitCache()
             end
-            self.book_data.book_type_label = res.book_type_label
-            self.cache_manager:asyncSaveCache(self.ui.document.file, self.book_data)
-            if self.scanBookForUnits then self:scanBookForUnits() end
+            if not has_unit_cache_now then
+                local settings = self.ai_helper and self.ai_helper.settings or {}
+                local disabled_types = settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+                local book_type = self:getEffectiveBookType()
+                local is_disabled = false
+                for _, t in ipairs(disabled_types) do
+                    if t == book_type then
+                        is_disabled = true
+                        break
+                    end
+                end
+                if is_disabled then
+                    if self.clearUnitUnderlines then self:clearUnitUnderlines() end
+                else
+                    if self.scanBookForUnits then self:scanBookForUnits() end
+                end
+            else
+                if self.applyUnitUnderlines then self:applyUnitUnderlines() end
+            end
         else
             self:log("XRayPlugin: Book type AI detection returned invalid or empty result: " .. tostring(res))
+            checkAndTriggerScan()
         end
     end
     UIManager:scheduleIn(1, pollResult)
-    return false
+    return true
 end
 
 -- --- Book Type Filter Settings Card ---
@@ -2288,6 +2426,8 @@ function XRayPlugin:getBookTypeFilterMenu()
         for _, bt in ipairs(book_types) do
             if bt.key == raw then label = bt.text; break end
         end
+        -- Strip parenthetical text to prevent truncation in native menus
+        label = label:gsub("%s*%b()", "")
         return string.format("%s (%s)", label, via)
     end
 

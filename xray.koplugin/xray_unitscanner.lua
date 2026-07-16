@@ -353,24 +353,25 @@ local function _checkSettingsChanged(self)
             book_type = book_type,
             disabled_types = disabled_types,
         }
-        return false
+        return false, false
     end
 
     local state = self.last_settings_state
-    local changed = (state.enabled ~= enabled) or
-                    (state.underline_enabled ~= underline_enabled) or
-                    (state.direction ~= direction) or
-                    (state.dim_units ~= dim_units) or
-                    (state.cat_l ~= cat_l) or
-                    (state.cat_w ~= cat_w) or
-                    (state.cat_t ~= cat_t) or
-                    (state.cat_v ~= cat_v) or
-                    (state.cat_s ~= cat_s) or
-                    (state.cat_a ~= cat_a) or
-                    (state.book_type ~= book_type) or
-                    (state.disabled_types ~= disabled_types)
+    local scan_changed = (state.direction ~= direction) or
+                         (state.dim_units ~= dim_units) or
+                         (state.cat_l ~= cat_l) or
+                         (state.cat_w ~= cat_w) or
+                         (state.cat_t ~= cat_t) or
+                         (state.cat_v ~= cat_v) or
+                         (state.cat_s ~= cat_s) or
+                         (state.cat_a ~= cat_a)
 
-    if changed then
+    local draw_changed = (state.enabled ~= enabled) or
+                         (state.underline_enabled ~= underline_enabled) or
+                         (state.book_type ~= book_type) or
+                         (state.disabled_types ~= disabled_types)
+
+    if scan_changed or draw_changed then
         self.last_settings_state = {
             enabled = enabled,
             underline_enabled = underline_enabled,
@@ -387,14 +388,43 @@ local function _checkSettingsChanged(self)
         }
     end
 
-    return changed
+    return scan_changed, draw_changed
 end
 
 function M:_drawUnitUnderlines(bb)
-    if _checkSettingsChanged(self) then
-        log("Settings changed, refreshing unit scan")
+    local scan_needed, redraw_needed = _checkSettingsChanged(self)
+    if scan_needed then
+        log("Scanner settings changed, refreshing unit scan")
         self:scanBookForUnits()
         self._box_cache_sig = nil
+    elseif redraw_needed then
+        log("Display settings changed, updating underlines state")
+        self._box_cache_sig = nil
+        
+        local settings = self.ai_helper and self.ai_helper.settings or {}
+        local enabled = settings.unit_converter_enabled ~= false
+        local underline_enabled = settings.unit_underline_enabled ~= false
+        
+        local book_type = self.getEffectiveBookType and self:getEffectiveBookType() or "unknown"
+        local disabled_types = settings.unit_disabled_book_types or { "manga", "graphic_novel", "children", "poetry" }
+        local is_disabled = false
+        for _, t in ipairs(disabled_types) do
+            if t == book_type then
+                is_disabled = true
+                break
+            end
+        end
+        
+        if not enabled or not underline_enabled or is_disabled then
+            self:clearUnitUnderlines()
+        else
+            if not self.unit_xp_matches then
+                local cache_loaded = self:loadUnitCache()
+                if not cache_loaded then
+                    self:scanBookForUnits()
+                end
+            end
+        end
     end
 
     self:_resolveHighlightBoxes()
@@ -490,7 +520,7 @@ local function _getSettingsSignature(self, settings)
     local cat_s = settings.unit_cat_speed ~= false
     local cat_a = settings.unit_cat_area ~= false
     return table.concat({
-        "v31",
+        "v30",
         tostring(cat_l), tostring(cat_w), tostring(cat_t),
         tostring(cat_v), tostring(cat_s), tostring(cat_a),
     }, "|")
@@ -509,11 +539,12 @@ function M:loadUnitCache(resolved_dir)
         f:close()
         return false
     end
+    signature = signature:gsub("%s+$", "") -- strip carriage returns and trailing spaces/newlines
     
     local settings = self.ai_helper and self.ai_helper.settings or {}
     local current_sig = _getSettingsSignature(self, settings)
     if signature ~= current_sig then
-        log("loadUnitCache: Cache settings signature mismatch, ignoring")
+        log("loadUnitCache: Cache settings signature mismatch. File: [" .. tostring(signature) .. "], Current settings: [" .. tostring(current_sig) .. "]. Ignoring.")
         f:close()
         return false
     end
@@ -638,6 +669,9 @@ function M:scanBookForUnits(force)
     self._unit_scan_in_progress = true
 
     local Notification = require("ui/widget/notification")
+    local AlphaContainer = require("ui/widget/container/alphacontainer")
+    local Screen = require("device").screen
+
     -- Temporarily redirect smallffont to ffont during dialog init to make subtitle slightly larger
     local old_getFace = Font.getFace
     Font.getFace = function(self, name)
@@ -656,6 +690,37 @@ function M:scanBookForUnits(force)
     }
 
     Font.getFace = old_getFace
+
+    local sw, sh = Screen:getWidth(), Screen:getHeight()
+    local dim_child = {
+        getSize = function(this)
+            return Geom:new{ w = sw, h = sh }
+        end,
+        paintTo = function(this, bb, x, y)
+            bb:paintRoundedRect(x, y, sw, sh, Blitbuffer.COLOR_BLACK, 0)
+        end
+    }
+    local dim_bg = AlphaContainer:new{
+        alpha = 0.4,
+        dim_child
+    }
+
+    -- Monkey-patch paintTo to paint the dim background before drawing progress dialog
+    local orig_paintTo = progress_msg.paintTo
+    progress_msg.paintTo = function(this, bb, x, y)
+        dim_bg:paintTo(bb, 0, 0)
+        orig_paintTo(this, bb, x, y)
+    end
+
+    -- Clean up the dim_bg blitbuffer when the progress dialog closes
+    local orig_onCloseWidget = progress_msg.onCloseWidget
+    progress_msg.onCloseWidget = function(this)
+        dim_bg:onCloseWidget()
+        if orig_onCloseWidget then
+            orig_onCloseWidget(this)
+        end
+    end
+
     progress_msg:show()
     UIManager:forceRePaint()
 
