@@ -19,12 +19,31 @@ function LookupManager:new(plugin)
     return o
 end
 
--- Clean and normalize text for comparison
+-- Clean and normalize text for comparison (Chinese & Multilingual Fixed)
 function LookupManager:normalize(text)
     if type(text) ~= "string" or text == "" then return "" end
-    -- Remove non-alphanumeric characters from start/end and lowercase
-    local clean = text:gsub("^[^%w]+", ""):gsub("[^%w]+$", ""):lower()
-    return clean
+    
+    local is_english = true
+    if self.plugin and self.plugin.ai_helper then
+        local lang = self.plugin.ai_helper.current_language
+        if lang and lang ~= "en" then
+            is_english = false
+        end
+    end
+    
+    if is_english and text:find("[^\1-\127]") then
+        is_english = false
+    end
+    
+    if is_english then
+        local clean = text:gsub("^[^%w]+", ""):gsub("[^%w]+$", ""):lower()
+        return clean
+    else
+        local clean = text:match("^%s*(.-)%s*$") or text
+        clean = clean:gsub("[%.,%?%!%:%\"%\'“»«”‘，。！？：、•○●□]+$", "")
+        clean = clean:gsub("^[%\"%\'“»«”‘，。！？：、•○●□]+", "")
+        return clean:lower()
+    end
 end
 
 -- Collect all matches from a category list using a test function.

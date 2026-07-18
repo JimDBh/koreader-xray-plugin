@@ -1,4 +1,5 @@
 -- X-Ray UI and Menu Functions
+local util = require("util")
 
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
@@ -54,6 +55,27 @@ local function _textHasCJK(text)
     if type(text) ~= "string" then return false end
     return text:find("[\227-\234][\128-\191][\128-\191]") ~= nil
 end
+
+-- Truncates a string to limit_en characters (scaled down to limit_en/3 if CJK)
+-- only if the total length exceeds threshold_en (scaled down to threshold_en/3 if CJK).
+-- Returns: truncated_text, is_truncated
+local function _getTruncatedText(text, limit_en, threshold_en)
+    if type(text) ~= "string" or text == "" then
+        return "", false
+    end
+    local is_cjk = _textHasCJK(text)
+    
+    local limit = is_cjk and math.floor(limit_en / 3) or limit_en
+    local threshold = is_cjk and math.floor((threshold_en or limit_en) / 3) or (threshold_en or limit_en)
+    
+    local chars = util.splitToChars(text)
+    if #chars > threshold then
+        return table.concat(chars, "", 1, limit), true
+    else
+        return text, false
+    end
+end
+
 
 -- Returns true if the font family name looks like a CJK font
 local function _isCJKFontFamily(family)
@@ -263,9 +285,8 @@ function XRayBottomPopup:init()
     local display_desc = desc_str
     local is_truncated = false
     if desc_str ~= "" then
-        if #desc_str > 400 then
-            is_truncated = true
-            display_desc = desc_str:sub(1, 350)
+        display_desc, is_truncated = _getTruncatedText(desc_str, 350, 400)
+        if is_truncated then
             local last_space = display_desc:match("^.*()%s")
             if last_space then
                 display_desc = display_desc:sub(1, last_space - 1)
@@ -919,7 +940,10 @@ function M:showCharacters()
         -- Aliases are no longer listed in the main character list to reduce clutter,
         -- as they are still visible in the individual character infobox.
         local char_desc = self:resolveDescriptionForPage(char)
-        if char_desc and #char_desc > 0 and char_desc ~= "---" then text = text .. "\n  " .. char_desc:sub(1, 80) .. (#char_desc > 80 and "..." or "") end
+        if char_desc and #char_desc > 0 and char_desc ~= "---" then
+            local safe_desc, is_truncated = _getTruncatedText(char_desc, 80)
+            text = text .. "\n  " .. safe_desc .. (is_truncated and "..." or "")
+        end
         table.insert(items, { 
             text = text, 
             keep_menu_open = true,
@@ -1234,9 +1258,8 @@ function M:showCharacterDetails(character, opts)
     local display_desc = resolved_desc
     local is_truncated = false
     if resolved_desc and resolved_desc ~= "" and resolved_desc ~= "---" then
-        if #resolved_desc > 500 then
-            is_truncated = true
-            display_desc = resolved_desc:sub(1, 450)
+        display_desc, is_truncated = _getTruncatedText(resolved_desc, 450, 500)
+        if is_truncated then
             local last_space = display_desc:match("^.*()%s")
             if last_space then
                 display_desc = display_desc:sub(1, last_space - 1)
@@ -1418,9 +1441,8 @@ function M:showLocationDetails(loc_item, opts)
     local display_desc = desc
     local is_truncated = false
     if desc and desc ~= "" then
-        if #desc > 500 then
-            is_truncated = true
-            display_desc = desc:sub(1, 450)
+        display_desc, is_truncated = _getTruncatedText(desc, 450, 500)
+        if is_truncated then
             local last_space = display_desc:match("^.*()%s")
             if last_space then
                 display_desc = display_desc:sub(1, last_space - 1)
@@ -1630,9 +1652,8 @@ function M:showTermDetails(term, opts)
     local display_definition = resolved_definition
     local is_truncated = false
     if resolved_definition and resolved_definition ~= "" and resolved_definition ~= "---" then
-        if #resolved_definition > 500 then
-            is_truncated = true
-            display_definition = resolved_definition:sub(1, 450)
+        display_definition, is_truncated = _getTruncatedText(resolved_definition, 450, 500)
+        if is_truncated then
             local last_space = display_definition:match("^.*()%s")
             if last_space then
                 display_definition = display_definition:sub(1, last_space - 1)
@@ -1668,10 +1689,11 @@ function M:showTermDetails(term, opts)
     local mentions_enabled = self.ai_helper and self.ai_helper.settings and self.ai_helper.settings.mentions_enabled ~= false
 
     local function get_relookup_row()
+        local safe_text = _getTruncatedText(opts.original_text, 30)
         return {
             {
-                text = self.loc:t("relookup_button", opts.original_text:sub(1, 30))
-                    or ("Re-lookup '" .. opts.original_text:sub(1, 30) .. "'"),
+                text = self.loc:t("relookup_button", safe_text)
+                    or ("Re-lookup '" .. safe_text .. "'"),
                 callback = function()
                     if self.active_details_dialog then UIManager:close(self.active_details_dialog); self.active_details_dialog = nil end
                     self:fetchSingleWord(opts.original_text, opts.pos0, opts.pos1)
@@ -1819,7 +1841,7 @@ function M:showTerms()
             end
             table.insert(items, {
                 text = "• " .. name,
-                subtext = term.definition and term.definition:sub(1, 80) .. "...",
+                subtext = term.definition and _getTruncatedText(term.definition, 80) .. "...",
                 keep_menu_open = true,
                 separator = true,
                 callback = function()
@@ -3357,9 +3379,8 @@ function M:showTimelineEventDetails(ev, opts)
     local is_truncated = false
     local TRUNCATE_AT  = 300   -- chars before we add Read More
 
-    if #event_text > TRUNCATE_AT then
-        is_truncated  = true
-        display_text  = event_text:sub(1, TRUNCATE_AT)
+    display_text, is_truncated = _getTruncatedText(event_text, TRUNCATE_AT)
+    if is_truncated then
         local last_sp = display_text:match("^.*()%s")
         if last_sp then display_text = display_text:sub(1, last_sp - 1) end
         display_text  = display_text .. " ..."
@@ -3502,9 +3523,8 @@ function M:showHistoricalFigureDetails(fig, opts)
     local display_bio = bio
     local is_truncated = false
     if bio and bio ~= "" then
-        if #bio > 500 then
-            is_truncated = true
-            display_bio = bio:sub(1, 450)
+        display_bio, is_truncated = _getTruncatedText(bio, 450, 500)
+        if is_truncated then
             local last_space = display_bio:match("^.*()%s")
             if last_space then
                 display_bio = display_bio:sub(1, last_space - 1)
