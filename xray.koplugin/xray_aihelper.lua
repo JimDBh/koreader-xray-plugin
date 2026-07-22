@@ -18,8 +18,8 @@ end
 
 -- Single source of truth for default AI models
 local DEFAULT_AI = {
-    primary   = { provider = "gemini", model = "gemini-3.5-flash" },
-    secondary = { provider = "gemini", model = "gemini-3.1-flash-lite" },
+    primary   = { provider = "gemini", model = "gemini-3.6-flash" },
+    secondary = { provider = "gemini", model = "gemini-3.5-flash-lite" },
 }
 
 local AIHelper = {

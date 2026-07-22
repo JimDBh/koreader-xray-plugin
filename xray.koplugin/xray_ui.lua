@@ -3863,6 +3863,8 @@ function M:getAIModelSelectionMenu(setting_type)
             id = "gemini",
             display_name = "Gemini",
             models = {
+                { id = "gemini-3.6-flash", cost = "free" },
+                { id = "gemini-3.5-flash-lite", cost = "free" },
                 { id = "gemini-3.5-flash", cost = "free" },
                 { id = "gemini-3.1-flash-lite", cost = "free" },
                 { id = "gemini-2.5-flash", cost = "free" },
@@ -3874,6 +3876,8 @@ function M:getAIModelSelectionMenu(setting_type)
             id = "chatgpt",
             display_name = "ChatGPT",
             models = {
+                { id = "gpt-5.6-terra", cost = "paid" },
+                { id = "gpt-5.6-luna", cost = "paid" },
                 { id = "gpt-5.5", cost = "paid" },
                 { id = "gpt-5.4-mini", cost = "paid" },
                 { id = "gpt-5.4-nano", cost = "paid" },
@@ -3891,6 +3895,7 @@ function M:getAIModelSelectionMenu(setting_type)
             id = "claude",
             display_name = "Claude",
             models = {
+                { id = "claude-sonnet-5", cost = "paid" },
                 { id = "claude-sonnet-4-6", cost = "paid" },
                 { id = "claude-haiku-4-5", cost = "paid" },
             }

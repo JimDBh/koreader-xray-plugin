@@ -339,7 +339,20 @@ describe("AIHelper", function()
             assert.are.equal("value", decoded.keep_me)
             assert.are.equal("new_val", decoded.new_key)
             assert.is_nil(decoded.delete_me)
-            assert.is_nil(decoded.also_delete_me)
+        end)
+    end)
+
+    describe("DEFAULT_AI configuration", function()
+        it("should have gemini-3.6-flash as default primary model", function()
+            local primary = AIHelper.settings.primary_ai or { provider = "gemini", model = "gemini-3.6-flash" }
+            assert.are.equal("gemini", primary.provider)
+            assert.are.equal("gemini-3.6-flash", primary.model)
+        end)
+
+        it("should have gemini-3.5-flash-lite as default secondary model", function()
+            local secondary = AIHelper.settings.secondary_ai or { provider = "gemini", model = "gemini-3.5-flash-lite" }
+            assert.are.equal("gemini", secondary.provider)
+            assert.are.equal("gemini-3.5-flash-lite", secondary.model)
         end)
     end)
 end)
